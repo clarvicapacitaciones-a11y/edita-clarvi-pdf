@@ -60,6 +60,12 @@ Chrome, Edge, Firefox, Brave u Opera recientes. También Safari 16 o superior.
 - **Línea, Flecha, Rectángulo, Elipse** — con color, grosor, relleno y opacidad.
   Con <kbd>Shift</kbd> se fuerzan ángulos rectos y proporciones cuadradas.
 - **Tapar** — cubre lo que quieras con un rectángulo opaco (para censurar).
+- **Imagen** — inserta un PNG o JPG de tu equipo. Un clic lo coloca a su tamaño
+  natural; arrastrando lo encajas donde quieras. Al cambiarle el tamaño por una
+  esquina conserva la proporción (con <kbd>Shift</kbd> la liberas).
+- **Firma** — la dibujas una vez, o **importas una foto de tu firma en papel y
+  la app le quita el fondo** dejando sólo el trazo. Después la estampas en las
+  páginas que necesites, y se recuerda para la próxima vez que abras la app.
 - **Borrador** — quita los objetos que hayas añadido.
 - **Copiar** — activa la selección del texto original para copiarlo con
   <kbd>Ctrl</kbd>+<kbd>C</kbd>.
@@ -67,6 +73,32 @@ Chrome, Edge, Firefox, Brave u Opera recientes. También Safari 16 o superior.
 Todo se puede seleccionar, mover, redimensionar, reordenar (al frente / al
 fondo), duplicar y borrar, con **deshacer y rehacer** ilimitados dentro de la
 sesión.
+
+### Sobre el documento completo
+
+- **Numerar páginas** — con el formato que quieras (`1`, `Página 1`, `1 de 20`,
+  `- 1 -`…), en cualquiera de las seis posiciones habituales, eligiendo margen,
+  tipografía, tamaño, color, número inicial y rango. Puedes dejar la portada sin
+  numerar. En una página girada el número **sigue saliendo derecho**. Se quita
+  entero cuando quieras, sin tocar nada más.
+
+- **Comparar dos PDF** — enfrenta el documento abierto con otro archivo y marca
+  las diferencias sobre él: **verde** lo que sólo está aquí, y una **barra roja**
+  donde el otro archivo tiene texto que aquí falta. Además muestra un informe
+  con el recuento por página y el texto concreto que falta. Las marcas se
+  guardan dentro del PDF si lo guardas, o se quitan de un clic.
+
+- **Comprimir** — dos modos, y verás cuánto pesa el resultado **antes** de
+  descargarlo:
+  - *Optimizado*: recomprime las imágenes que van dentro y **deja el texto
+    intacto**. El documento se sigue pudiendo buscar, copiar y editar. Es el
+    que conviene casi siempre.
+  - *Máximo*: convierte cada página en una fotografía. ⚠️ **El documento deja de
+    tener texto**: no se podrá buscar, copiar ni editar después. Úsalo sólo para
+    cumplir un límite de tamaño al enviar, y guarda siempre el original.
+
+  Si el PDF es de puro texto ya viene comprimido de fábrica y apenas bajará; la
+  app te lo dice en lugar de fingir una mejora.
 
 ### Organizar páginas
 
@@ -96,7 +128,7 @@ y también al imprimir.
 | Flechas | Mover 1 pt (con <kbd>Shift</kbd>, 10 pt) |
 | <kbd>Ctrl</kbd> + rueda | Zoom |
 | <kbd>Esc</kbd> | Cancelar y volver a «Mover» |
-| <kbd>V T E H P L F R C W D</kbd> | Elegir herramienta |
+| <kbd>V T E H P L F R C W I S D</kbd> | Elegir herramienta |
 
 ---
 
@@ -126,8 +158,30 @@ Estas son las limitaciones reales, dichas sin adornos:
   La app no hace OCR.
 - **No se guarda solo.** Al cerrar la pestaña se pierde el trabajo no guardado
   (el navegador te avisa antes). Guarda con <kbd>Ctrl</kbd>+<kbd>S</kbd>.
+- **Comparar funciona sobre el texto.** Si uno de los dos archivos está escaneado
+  no hay palabras que enfrentar, y la app te lo dice en vez de marcarte el
+  documento entero como distinto. Tampoco compara imágenes ni maquetación:
+  compara lo que dice el documento.
+- **Comprimir tiene un techo.** Lo que hace pesar un PDF son las imágenes. En un
+  documento de texto y vectores no hay casi nada que recortar, y ningún programa
+  puede hacer magia con eso.
 
 ---
+
+## Lo que esta app no hace
+
+Para que no pierdas tiempo buscándolo:
+
+- **No convierte de Word a PDF ni al revés.** Hacerlo con fidelidad exige un
+  motor de maquetación de Office; en el navegador sólo saldría una aproximación
+  pobre. Para eso usa el propio Word (*Archivo → Guardar como → PDF*) o
+  LibreOffice, que es gratuito.
+- **No traduce.** Cualquier traductor decente implica mandar el contenido de tus
+  documentos a un servicio externo, y eso choca de frente con el principio de
+  que aquí nada sale de tu equipo.
+- **No hace OCR.** Un PDF escaneado se ve y se puede anotar, pero la app no
+  convierte esas imágenes en texto, así que ni «Editar» ni «Comparar» tienen
+  nada a lo que agarrarse.
 
 ## Privacidad
 
@@ -169,6 +223,10 @@ assets/
     anotaciones.js    Objetos dibujables y su pintado
     documentos.js     Abrir, unir y manipular páginas
     render.js         Render de páginas, capa de texto y miniaturas
+    imagenes.js       Imágenes, firma y quitado de fondo
+    numeracion.js     Numeración de páginas
+    comparar.js       Comparación de dos PDF (diferencias por palabras)
+    comprimir.js      Reducción del tamaño del archivo
     herramientas.js   Interacción con el ratón y edición de texto
     paneles.js        Panel de propiedades y de páginas
     exportar.js       Construcción del PDF final
