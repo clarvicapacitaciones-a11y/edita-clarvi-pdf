@@ -213,7 +213,7 @@
 
     /* Imagen */
     if (anot.tipo === 'imagen') {
-      var gi = grupo('Imagen');
+      var gi = grupo('Archivo');
       var fi = Clarvi.imagenes.ficha(anot.imgId);
       if (fi) {
         var info = util.crear('div', 'aviso-props');
