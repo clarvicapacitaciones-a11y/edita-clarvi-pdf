@@ -13,7 +13,7 @@
   var docs = Clarvi.docs;
   var exportar = Clarvi.exportar;
 
-  var barraEstado, lienzo, inpArchivos;
+  var barraEstado, lienzo, inpArchivos, inpImagen;
   var modoAnadir = false;
   var ocupado = false;
 
@@ -73,6 +73,7 @@
     if (nombre !== 'seleccionar') herr.seleccionar(null, null);
 
     if (nombre === 'seltexto' || nombre === 'editar' || nombre === 'resaltar') precargarTexto();
+    if ((nombre === 'imagen' || nombre === 'firma') && !imagenLista(nombre)) pedirImagen(nombre);
 
     estado.emitir('herramienta', nombre);
     estado.emitir('seleccion');
@@ -90,6 +91,41 @@
         render.textoDePagina(pag);
         if (estado.herramienta === 'seltexto') render.asegurarCapaTexto(pag);
       }
+    });
+  }
+
+  /* ── Imagen y firma ─────────────────────────────────────────────────── */
+
+  /** ¿Hay ya una imagen preparada del tipo que toca? */
+  function imagenLista(herramienta) {
+    var p = estado.pendiente;
+    if (!p) return false;
+    return herramienta === 'firma' ? p.esFirma === true : p.esFirma !== true;
+  }
+
+  /** Pide al usuario la imagen (o la firma) que se va a colocar. */
+  function pedirImagen(herramienta) {
+    if (herramienta === 'firma') {
+      Clarvi.imagenes.abrirDialogo(function (ficha) {
+        ficha.esFirma = true;
+        estado.pendiente = ficha;
+        avisar('Firma lista. Haz clic en la página donde quieras estamparla.', 'ok');
+        paneles.refrescar();
+      });
+      return;
+    }
+    inpImagen.value = '';
+    inpImagen.click();
+  }
+
+  function cargarImagen(archivo) {
+    if (!archivo) return;
+    Clarvi.imagenes.desdeArchivo(archivo).then(function (ficha) {
+      estado.pendiente = ficha;
+      avisar('Imagen lista. Haz clic en la página, o arrastra para encajarla.', 'ok');
+      paneles.refrescar();
+    }).catch(function (err) {
+      avisar('No se pudo cargar la imagen: ' + (err.message || err), 'error');
     });
   }
 
@@ -184,7 +220,8 @@
 
   var TECLAS_HERR = {
     v: 'seleccionar', t: 'texto', e: 'editar', h: 'resaltar', p: 'lapiz',
-    l: 'linea', f: 'flecha', r: 'rect', c: 'elipse', w: 'tapar', d: 'borrar'
+    l: 'linea', f: 'flecha', r: 'rect', c: 'elipse', w: 'tapar',
+    i: 'imagen', s: 'firma', d: 'borrar'
   };
 
   function escribiendo(ev) {
@@ -207,7 +244,13 @@
     if (ctrl && k === '0') { ev.preventDefault(); aplicarZoom(1); return; }
     if (ctrl) return;
 
-    if (ev.key === 'Escape') { herr.cerrarEditor(true); elegirHerramienta('seleccionar'); return; }
+    if (ev.key === 'Escape') {
+      if (!util.$('#modalFirma').hidden) { Clarvi.imagenes.cerrarDialogo(); return; }
+      if (!util.$('#modalAyuda').hidden) { util.$('#modalAyuda').hidden = true; return; }
+      herr.cerrarEditor(true);
+      elegirHerramienta('seleccionar');
+      return;
+    }
     if (ev.key === 'Delete' || ev.key === 'Backspace') {
       if (herr.borrarSeleccion()) { ev.preventDefault(); paneles.refrescar(); }
       return;
@@ -274,6 +317,12 @@
     inpArchivos.addEventListener('change', function () {
       cargar(inpArchivos.files, modoAnadir && estado.hayDocumento());
     });
+
+    inpImagen.addEventListener('change', function () {
+      cargarImagen(inpImagen.files && inpImagen.files[0]);
+    });
+
+    estado.al('pedirImagen', pedirImagen);
 
     util.$('#btnDeshacer').addEventListener('click', function () { if (estado.deshacer()) trasHistorial(); });
     util.$('#btnRehacer').addEventListener('click', function () { if (estado.rehacer()) trasHistorial(); });
@@ -372,6 +421,7 @@
     barraEstado = util.$('#estado');
     lienzo = util.$('#lienzo');
     inpArchivos = util.$('#inpArchivos');
+    inpImagen = util.$('#inpImagen');
     lienzo.dataset.herr = 'seleccionar';
 
     if (!raiz.pdfjsLib || !raiz.PDFLib) {
@@ -384,7 +434,11 @@
     render.iniciar();
     herr.iniciar();
     paneles.iniciar();
+    Clarvi.imagenes.iniciar();
     conectar();
+
+    // Si el usuario ya firmó en otra sesión, se recupera para tenerla a mano.
+    Clarvi.imagenes.cargarFirmaGuardada();
 
     Promise.all([
       raiz.CLARVI_PDFJS_LISTO || Promise.resolve(true),

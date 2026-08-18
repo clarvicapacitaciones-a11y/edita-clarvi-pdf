@@ -10,6 +10,7 @@
    linea     {x1,y1,x2,y2, trazo, grosor, opacidad}
    flecha    idem + punta
    trazo     {pts:[x,y,x,y,…], trazo, grosor, opacidad, resaltador}
+   imagen    {x,y,w,h, imgId, opacidad}              (firma incluida)
    texto     {x,y,w, texto, tam, fuente, negrita, cursiva, color, alineado,
               interlineado, fondo}
 
@@ -219,6 +220,7 @@
 
       case 'resaltado':
       case 'tapar':
+      case 'imagen':
         return { x: anot.x, y: anot.y, w: anot.w, h: anot.h };
 
       case 'linea':
@@ -260,6 +262,7 @@
       case 'resaltado':
       case 'tapar':
       case 'texto':
+      case 'imagen':
         return geo.enRect(x, y, caja(anot), t);
 
       case 'rect': {
@@ -426,6 +429,21 @@
         if (p.length === 2) ctx.lineTo(p[0] + 0.01, p[1]);
         for (var i = 2; i < p.length; i += 2) ctx.lineTo(p[i], p[i + 1]);
         ctx.stroke();
+        break;
+      }
+
+      case 'imagen': {
+        var bm = Clarvi.imagenes && Clarvi.imagenes.bitmap(anot.imgId);
+        if (bm) {
+          ctx.drawImage(bm, anot.x, anot.y, anot.w, anot.h);
+        } else {
+          // La imagen todavía no está lista: se marca el hueco.
+          ctx.strokeStyle = '#9aa5bd';
+          ctx.setLineDash([3, 3]);
+          ctx.lineWidth = 0.7;
+          ctx.strokeRect(anot.x, anot.y, anot.w, anot.h);
+          ctx.setLineDash([]);
+        }
         break;
       }
 

@@ -34,6 +34,14 @@
     fuentes: new Map(),
     paginas: [],
 
+    /* Imágenes y firmas. Va aparte a propósito: las anotaciones sólo guardan
+       el identificador, así las instantáneas del historial siguen siendo
+       JSON ligero y los bytes no se duplican nunca. */
+    imagenes: new Map(),
+
+    /* Imagen elegida a la espera de que el usuario la coloque en una página */
+    pendiente: null,
+
     /* Interacción */
     herramienta: 'seleccionar',
     seleccion: null,          // { paginaId, anotId }
@@ -59,7 +67,8 @@
       negrita:       false,
       cursiva:       false,
       alineado:      'izq',
-      interlineado:  1.25
+      interlineado:  1.25,
+      opacidadImagen: 1
     },
 
     /* Historial */

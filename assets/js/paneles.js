@@ -129,7 +129,8 @@
 
     var NOMBRES = {
       texto: 'Texto', rect: 'Rectángulo', elipse: 'Elipse', linea: 'Línea',
-      flecha: 'Flecha', trazo: 'Trazo a mano', resaltado: 'Resaltado', tapar: 'Tapado'
+      flecha: 'Flecha', trazo: 'Trazo a mano', resaltado: 'Resaltado',
+      tapar: 'Tapado', imagen: 'Imagen'
     };
     tituloProps.textContent = NOMBRES[anot.tipo] || 'Objeto';
 
@@ -208,6 +209,32 @@
       gt.appendChild(paleta(['#ffffff', '#000000', '#f4f4f4', '#eeeae0', '#111111'],
         anot.relleno, function (v) { anot.relleno = aj.colorTapar = v; tocarAnot(anot); refrescar(); }));
       c.appendChild(gt);
+    }
+
+    /* Imagen */
+    if (anot.tipo === 'imagen') {
+      var gi = grupo('Imagen');
+      var fi = Clarvi.imagenes.ficha(anot.imgId);
+      if (fi) {
+        var info = util.crear('div', 'aviso-props');
+        info.innerHTML = '<b>' + fi.nombre + '</b><br>' + fi.ancho + ' × ' + fi.alto +
+                         ' px · ' + util.tamanoLegible(fi.bytes.length);
+        gi.appendChild(info);
+      }
+      gi.appendChild(filaRango('Opacidad', anot.opacidad, 0.05, 1, 0.05,
+        function (v) { anot.opacidad = aj.opacidadImagen = v; tocarAnot(anot); },
+        function (v) { return Math.round(v * 100) + '%'; }));
+      gi.appendChild(boton('Recuperar proporción', function () {
+        var f = Clarvi.imagenes.ficha(anot.imgId);
+        if (!f) return;
+        anot.h = anot.w * (f.alto / Math.max(1, f.ancho));
+        tocarAnot(anot);
+      }));
+      c.appendChild(gi);
+      var nota = util.crear('div', 'aviso-props');
+      nota.innerHTML = 'Al arrastrar una esquina se conserva la proporción. ' +
+                       'Con <b>Shift</b> la deformas a voluntad.';
+      c.appendChild(nota);
     }
 
     /* Formas y trazos */
@@ -291,7 +318,7 @@
       seleccionar: 'Mover', texto: 'Texto nuevo', editar: 'Editar texto del PDF',
       resaltar: 'Resaltar', lapiz: 'Lápiz', linea: 'Línea', flecha: 'Flecha',
       rect: 'Rectángulo', elipse: 'Elipse', tapar: 'Tapar', borrar: 'Borrador',
-      seltexto: 'Copiar texto'
+      seltexto: 'Copiar texto', imagen: 'Insertar imagen', firma: 'Firma'
     };
     tituloProps.textContent = NOMBRES[h] || 'Propiedades';
 
@@ -318,6 +345,38 @@
         av2.innerHTML = AYUDA_HERR.editar;
         c.appendChild(av2);
       }
+    }
+
+    if (h === 'imagen' || h === 'firma') {
+      var gim = grupo(h === 'firma' ? 'Firma' : 'Imagen');
+      var lista = estado.pendiente;
+      var esFirma = h === 'firma';
+      var correcta = lista && (esFirma ? lista.esFirma === true : lista.esFirma !== true);
+
+      var av = util.crear('div', 'aviso-props');
+      av.innerHTML = correcta
+        ? 'Lista para colocar. <b>Clic</b> en la página para el tamaño natural, ' +
+          'o <b>arrastra</b> para encajarla. Puedes estamparla en varias páginas seguidas.'
+        : (esFirma
+            ? 'Dibuja tu firma o importa una foto: se le quitará el fondo del papel.'
+            : 'Elige un archivo PNG o JPG de tu equipo.');
+      gim.appendChild(av);
+
+      gim.appendChild(boton(esFirma ? 'Dibujar o cambiar la firma…' : 'Elegir imagen…',
+        function () { estado.emitir('pedirImagen', h); }));
+
+      if (esFirma && Clarvi.imagenes.firmaGuardada()) {
+        gim.appendChild(boton('Olvidar la firma guardada', function () {
+          Clarvi.imagenes.olvidarFirma();
+          estado.pendiente = null;
+          refrescar();
+        }, 'peligro'));
+      }
+
+      gim.appendChild(filaRango('Opacidad', aj.opacidadImagen, 0.05, 1, 0.05,
+        function (v) { aj.opacidadImagen = v; },
+        function (v) { return Math.round(v * 100) + '%'; }));
+      c.appendChild(gim);
     }
 
     if (h === 'resaltar') {

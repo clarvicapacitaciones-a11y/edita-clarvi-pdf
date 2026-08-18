@@ -78,6 +78,8 @@
       <button class="herr" data-herr="rect"     title="Rectángulo (R)"><span>▭</span><em>Rect.</em></button>
       <button class="herr" data-herr="elipse"   title="Elipse o círculo (C)"><span>◯</span><em>Elipse</em></button>
       <button class="herr" data-herr="tapar"    title="Tapar u ocultar contenido (W)"><span>▨</span><em>Tapar</em></button>
+      <button class="herr" data-herr="imagen"   title="Insertar una imagen desde tu equipo (I)"><span>🖼️</span><em>Imagen</em></button>
+      <button class="herr" data-herr="firma"    title="Estampar tu firma (S)"><span>✍️</span><em>Firma</em></button>
       <button class="herr" data-herr="borrar"   title="Borrar objetos añadidos (D)"><span>🧽</span><em>Borrar</em></button>
       <span class="herr-sep"></span>
       <button class="herr" data-herr="seltexto" title="Seleccionar y copiar el texto del PDF"><span>⌶</span><em>Copiar</em></button>
@@ -154,6 +156,10 @@
           <li><b>Línea, Flecha, Rect., Elipse</b> — formas; con <kbd>Shift</kbd> se fuerzan
               ángulos rectos y proporciones cuadradas.</li>
           <li><b>Tapar</b> — cubre con un rectángulo opaco (censurar).</li>
+          <li><b>Imagen</b> — inserta un PNG o JPG de tu equipo. Clic para el tamaño
+              natural, o arrastra para encajarla.</li>
+          <li><b>Firma</b> — dibújala una vez (o importa una foto y se le quita el
+              fondo del papel) y estámpala donde quieras. Se recuerda para la próxima vez.</li>
           <li><b>Borrar</b> — elimina objetos añadidos (no el contenido original).</li>
           <li><b>Copiar</b> — activa la selección del texto original del PDF.</li>
         </ul>
@@ -168,7 +174,9 @@
           <li><kbd>Ctrl</kbd> + rueda, o <kbd>Ctrl</kbd>+<kbd>+</kbd>/<kbd>−</kbd>, para el zoom</li>
           <li>Flechas: mover 1 pt · con <kbd>Shift</kbd>: 10 pt</li>
           <li><kbd>Esc</kbd> cancelar y volver a Mover</li>
-          <li><kbd>V T E H P L F R C W D</kbd> — elegir herramienta</li>
+          <li><kbd>V T E H P L F R C W I S D</kbd> — elegir herramienta</li>
+          <li>Al cambiar el tamaño de una imagen se conserva su proporción;
+              con <kbd>Shift</kbd> se libera</li>
         </ul>
         <h3>Unir, ordenar y extraer</h3>
         <ul class="lista-ayuda">
@@ -183,9 +191,44 @@
   </div>
 </div>
 
+<!-- ══════════ Diálogo de firma ══════════ -->
+<div class="modal" id="modalFirma" hidden>
+  <div class="modal-caja">
+    <h2>Tu firma</h2>
+    <p class="modal-ayuda" id="avisoFirma">Traza la firma con el ratón o el dedo.</p>
+
+    <canvas id="lienzoFirma" width="720" height="260"></canvas>
+
+    <div class="firma-ops" id="filaDibujoFirma">
+      <label>Color <input type="color" id="colorFirma" value="#0b3d91"></label>
+      <label class="crece">Grosor
+        <input type="range" id="grosorFirma" min="1" max="10" step="0.5" value="3">
+      </label>
+      <button class="mini-btn" id="btnFotoFirma" title="Usar una foto o un escaneo de tu firma">
+        📷 Importar foto
+      </button>
+    </div>
+
+    <div class="firma-ops" id="filaSensFirma" hidden>
+      <label class="crece">Quitar fondo
+        <input type="range" id="sensFirma" min="0" max="1" step="0.05" value="0.5">
+      </label>
+      <button class="mini-btn" id="btnFotoFirma2" title="Elegir otra foto">📷 Otra foto</button>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn" id="btnLimpiarFirma">Empezar de nuevo</button>
+      <button class="btn" id="btnCancelarFirma">Cancelar</button>
+      <button class="btn btn-primario" id="btnUsarFirma">Usar esta firma</button>
+    </div>
+  </div>
+</div>
+
 <div class="capa-arrastre" id="capaArrastre" hidden><div>Suelta aquí los PDF</div></div>
 
 <input type="file" id="inpArchivos" accept="application/pdf,.pdf" multiple hidden>
+<input type="file" id="inpImagen" accept="image/png,image/jpeg" hidden>
+<input type="file" id="inpFotoFirma" accept="image/png,image/jpeg" hidden>
 
 <!-- ══════════ Librerías locales (funcionan sin internet) ══════════ -->
 <script src="assets/vendor/pdf-lib/pdf-lib.js"></script>
@@ -197,6 +240,7 @@
 <script src="assets/js/estado.js"></script>
 <script src="assets/js/geometria.js"></script>
 <script src="assets/js/anotaciones.js"></script>
+<script src="assets/js/imagenes.js"></script>
 <script src="assets/js/documentos.js"></script>
 <script src="assets/js/render.js"></script>
 <script src="assets/js/herramientas.js"></script>

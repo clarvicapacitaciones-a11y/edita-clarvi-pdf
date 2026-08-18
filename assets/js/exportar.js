@@ -38,6 +38,28 @@
     });
   }
 
+  /* ── Imágenes del documento de salida ───────────────────────────────── */
+
+  function creadorImagenes(salida) {
+    var cache = {};
+    return function (imgId) {
+      if (cache[imgId]) return cache[imgId];
+
+      var ficha = estado.imagenes.get(imgId);
+      if (!ficha) return Promise.resolve(null);
+
+      // Se manda una copia: pdf-lib podría quedarse con el búfer y la imagen
+      // tiene que seguir sirviendo si se vuelve a guardar.
+      var copia = ficha.bytes.slice(0);
+      var tarea = (ficha.tipo === 'image/png')
+        ? salida.embedPng(copia)
+        : salida.embedJpg(copia);
+
+      cache[imgId] = tarea.catch(function () { return null; });
+      return cache[imgId];
+    };
+  }
+
   /* ── Fuentes tipográficas del documento de salida ───────────────────── */
 
   function creadorFuentes(salida) {
@@ -52,7 +74,7 @@
 
   /* ── Volcado de un objeto a la página de salida ─────────────────────── */
 
-  function pintar(pagPdf, pag, anot, obtenerFuente) {
+  function pintar(pagPdf, pag, anot, obtenerFuente, obtenerImagen) {
     var x0 = pag.vista[0], y1 = pag.vista[3];
     var X = function (x) { return x0 + x; };
     var Y = function (y) { return y1 - y; };
@@ -146,6 +168,16 @@
         });
         return Promise.resolve();
       }
+
+      case 'imagen':
+        return obtenerImagen(anot.imgId).then(function (img) {
+          if (!img) return;
+          pagPdf.drawImage(img, {
+            x: X(anot.x), y: Y(anot.y + anot.h),
+            width: anot.w, height: anot.h,
+            opacity: op
+          });
+        });
 
       case 'texto':
         return obtenerFuente(anot).then(function (fuente) {
@@ -247,6 +279,7 @@
 
     }).then(function (mapa) {
       var obtenerFuente = creadorFuentes(salida);
+      var obtenerImagen = creadorImagenes(salida);
       var cadena = Promise.resolve();
 
       paginas.forEach(function (pag) {
@@ -259,7 +292,7 @@
 
         pag.anots.forEach(function (anot) {
           cadena = cadena.then(function () {
-            return pintar(pagPdf, pag, anot, obtenerFuente);
+            return pintar(pagPdf, pag, anot, obtenerFuente, obtenerImagen);
           });
         });
       });
