@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor PDF Clarvi — offline</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23d64545'/><path d='M9 8h9l6 6v10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z' fill='%23fff'/><path d='M18 8v6h6' fill='%23f2c4c4'/></svg>">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ══════════ Barra superior ══════════ -->
+  <header class="barra-sup">
+    <div class="marca">
+      <svg viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">
+        <rect width="32" height="32" rx="7" fill="#d64545"/>
+        <path d="M9 8h9l6 6v10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z" fill="#fff"/>
+        <path d="M18 8v6h6" fill="#f2c4c4"/>
+      </svg>
+      <span>Editor&nbsp;PDF <b>Clarvi</b></span>
+    </div>
+
+    <div class="grupo-acc">
+      <button class="btn btn-primario" id="btnAbrir" title="Abrir uno o varios PDF (Ctrl+O)">
+        <span class="ico">📂</span> Abrir
+      </button>
+      <button class="btn" id="btnAgregar" title="Añadir más PDF al final (unir)" disabled>
+        <span class="ico">➕</span> Unir PDF
+      </button>
+      <span class="sep"></span>
+      <button class="btn btn-icono" id="btnDeshacer" title="Deshacer (Ctrl+Z)" disabled>↶</button>
+      <button class="btn btn-icono" id="btnRehacer" title="Rehacer (Ctrl+Y)" disabled>↷</button>
+    </div>
+
+    <div class="grupo-acc derecha">
+      <button class="btn" id="btnExtraer" title="Guardar las páginas seleccionadas en un PDF nuevo" disabled>
+        <span class="ico">✂️</span> Extraer
+      </button>
+      <button class="btn btn-exito" id="btnGuardar" title="Guardar el PDF editado (Ctrl+S)" disabled>
+        <span class="ico">💾</span> Guardar PDF
+      </button>
+      <button class="btn btn-icono" id="btnAyuda" title="Ayuda y atajos">?</button>
+    </div>
+  </header>
+
+  <!-- ══════════ Cuerpo ══════════ -->
+  <div class="cuerpo">
+
+    <!-- Panel de páginas -->
+    <aside class="panel-pag" id="panelPag">
+      <div class="panel-cab">
+        <span>Páginas</span>
+        <div class="cab-btns">
+          <button class="mini-btn" id="btnSelTodo" title="Seleccionar / quitar todas">☑</button>
+        </div>
+      </div>
+      <div class="acciones-pag" id="accionesPag" hidden>
+        <span id="contSel">0</span>
+        <button class="mini-btn" id="btnRotIzq"   title="Girar 90° a la izquierda">⟲</button>
+        <button class="mini-btn" id="btnRotDer"   title="Girar 90° a la derecha">⟳</button>
+        <button class="mini-btn" id="btnDuplicar" title="Duplicar">⧉</button>
+        <button class="mini-btn peligro" id="btnBorrarPag" title="Eliminar">🗑</button>
+      </div>
+      <div class="lista-min" id="listaMin"></div>
+    </aside>
+
+    <!-- Herramientas -->
+    <nav class="herramientas" id="herramientas" aria-label="Herramientas">
+      <button class="herr activa" data-herr="seleccionar" title="Seleccionar y mover objetos (V)"><span>➤</span><em>Mover</em></button>
+      <button class="herr" data-herr="texto"    title="Añadir un cuadro de texto (T)"><span class="tipo-t">T</span><em>Texto</em></button>
+      <button class="herr" data-herr="editar"   title="Editar un texto que ya está en el PDF (E)"><span>✎</span><em>Editar</em></button>
+      <button class="herr" data-herr="resaltar" title="Resaltar como marcatextos (H)"><span>▬</span><em>Resaltar</em></button>
+      <button class="herr" data-herr="lapiz"    title="Dibujar a mano alzada (P)"><span>✏️</span><em>Lápiz</em></button>
+      <button class="herr" data-herr="linea"    title="Línea recta (L)"><span>╱</span><em>Línea</em></button>
+      <button class="herr" data-herr="flecha"   title="Flecha (F)"><span>➚</span><em>Flecha</em></button>
+      <button class="herr" data-herr="rect"     title="Rectángulo (R)"><span>▭</span><em>Rect.</em></button>
+      <button class="herr" data-herr="elipse"   title="Elipse o círculo (C)"><span>◯</span><em>Elipse</em></button>
+      <button class="herr" data-herr="tapar"    title="Tapar u ocultar contenido (W)"><span>▨</span><em>Tapar</em></button>
+      <button class="herr" data-herr="borrar"   title="Borrar objetos añadidos (D)"><span>🧽</span><em>Borrar</em></button>
+      <span class="herr-sep"></span>
+      <button class="herr" data-herr="seltexto" title="Seleccionar y copiar el texto del PDF"><span>⌶</span><em>Copiar</em></button>
+    </nav>
+
+    <!-- Lienzo -->
+    <main class="lienzo" id="lienzo" tabindex="0">
+      <div class="vacio" id="vacio">
+        <div class="vacio-caja">
+          <div class="vacio-ico">📄</div>
+          <h1>Editor de PDF sin instalación</h1>
+          <p>Arrastra aquí tus archivos <b>PDF</b>, o pulsa el botón.</p>
+          <button class="btn btn-primario grande" id="btnAbrir2">📂 Abrir archivos PDF</button>
+          <ul class="vacio-lista">
+            <li>✏️ Escribe, corrige, dibuja, resalta y tapa contenido</li>
+            <li>🔗 Une varios PDF en uno solo</li>
+            <li>🔄 Gira, reordena, duplica, elimina y extrae páginas</li>
+            <li>🔒 Todo ocurre en tu equipo: ningún archivo sale de aquí</li>
+          </ul>
+        </div>
+      </div>
+      <div class="paginas" id="paginas"></div>
+    </main>
+
+    <!-- Propiedades -->
+    <aside class="panel-props" id="panelProps">
+      <div class="panel-cab"><span id="tituloProps">Propiedades</span></div>
+      <div class="props-cuerpo" id="propsCuerpo"></div>
+    </aside>
+  </div>
+
+  <!-- ══════════ Barra inferior ══════════ -->
+  <footer class="barra-inf">
+    <div class="estado" id="estado">Listo</div>
+    <div class="nav-pag">
+      <button class="mini-btn" id="btnPagAnt" title="Página anterior">‹</button>
+      <input type="number" id="inpPag" min="1" value="1" title="Ir a la página">
+      <span id="totalPag">/ 0</span>
+      <button class="mini-btn" id="btnPagSig" title="Página siguiente">›</button>
+    </div>
+    <div class="zoom">
+      <button class="mini-btn" id="btnZoomMenos" title="Alejar (Ctrl −)">−</button>
+      <select id="selZoom" title="Nivel de zoom">
+        <option value="ancho">Ajustar ancho</option>
+        <option value="pagina">Página completa</option>
+        <option value="0.25">25 %</option>
+        <option value="0.5">50 %</option>
+        <option value="0.75">75 %</option>
+        <option value="1" selected>100 %</option>
+        <option value="1.25">125 %</option>
+        <option value="1.5">150 %</option>
+        <option value="2">200 %</option>
+        <option value="3">300 %</option>
+        <option value="4">400 %</option>
+      </select>
+      <button class="mini-btn" id="btnZoomMas" title="Acercar (Ctrl +)">+</button>
+    </div>
+  </footer>
+</div>
+
+<!-- ══════════ Diálogo de ayuda ══════════ -->
+<div class="modal" id="modalAyuda" hidden>
+  <div class="modal-caja ancha">
+    <h2>Ayuda</h2>
+    <div class="ayuda-cols">
+      <div>
+        <h3>Herramientas</h3>
+        <ul class="lista-ayuda">
+          <li><b>Mover</b> — selecciona, mueve y redimensiona lo que has añadido.</li>
+          <li><b>Texto</b> — arrastra un cuadro y escribe dentro.</li>
+          <li><b>Editar</b> — haz clic sobre un texto del PDF: se tapa y lo reescribes.</li>
+          <li><b>Resaltar</b> — arrastra sobre un renglón (efecto marcatextos).</li>
+          <li><b>Lápiz</b> — dibujo libre a mano alzada.</li>
+          <li><b>Línea, Flecha, Rect., Elipse</b> — formas; con <kbd>Shift</kbd> se fuerzan
+              ángulos rectos y proporciones cuadradas.</li>
+          <li><b>Tapar</b> — cubre con un rectángulo opaco (censurar).</li>
+          <li><b>Borrar</b> — elimina objetos añadidos (no el contenido original).</li>
+          <li><b>Copiar</b> — activa la selección del texto original del PDF.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Atajos</h3>
+        <ul class="lista-ayuda">
+          <li><kbd>Ctrl</kbd>+<kbd>O</kbd> abrir · <kbd>Ctrl</kbd>+<kbd>S</kbd> guardar</li>
+          <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer · <kbd>Ctrl</kbd>+<kbd>Y</kbd> rehacer</li>
+          <li><kbd>Supr</kbd> borrar el objeto seleccionado</li>
+          <li><kbd>Ctrl</kbd>+<kbd>D</kbd> duplicar el objeto seleccionado</li>
+          <li><kbd>Ctrl</kbd> + rueda, o <kbd>Ctrl</kbd>+<kbd>+</kbd>/<kbd>−</kbd>, para el zoom</li>
+          <li>Flechas: mover 1 pt · con <kbd>Shift</kbd>: 10 pt</li>
+          <li><kbd>Esc</kbd> cancelar y volver a Mover</li>
+          <li><kbd>V T E H P L F R C W D</kbd> — elegir herramienta</li>
+        </ul>
+        <h3>Unir, ordenar y extraer</h3>
+        <ul class="lista-ayuda">
+          <li><b>Unir PDF</b> añade los archivos al final del documento.</li>
+          <li>En el panel de páginas, arrastra una miniatura para reordenarla.</li>
+          <li>Haz clic en una miniatura para seleccionarla y podrás girarla,
+              duplicarla, eliminarla o <b>Extraer</b>la a un PDF nuevo.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="modal-btns"><button class="btn btn-primario" id="btnCerrarAyuda">Entendido</button></div>
+  </div>
+</div>
+
+<div class="capa-arrastre" id="capaArrastre" hidden><div>Suelta aquí los PDF</div></div>
+
+<input type="file" id="inpArchivos" accept="application/pdf,.pdf" multiple hidden>
+
+<!-- ══════════ Librerías locales (funcionan sin internet) ══════════ -->
+<script src="assets/vendor/pdf-lib/pdf-lib.js"></script>
+<script src="assets/vendor/pdfjs/pdf.js"></script>
+<script src="assets/js/arranque.js"></script>
+
+<!-- ══════════ Aplicación ══════════ -->
+<script src="assets/js/util.js"></script>
+<script src="assets/js/estado.js"></script>
+<script src="assets/js/geometria.js"></script>
+<script src="assets/js/anotaciones.js"></script>
+<script src="assets/js/documentos.js"></script>
+<script src="assets/js/render.js"></script>
+<script src="assets/js/herramientas.js"></script>
+<script src="assets/js/paneles.js"></script>
+<script src="assets/js/exportar.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

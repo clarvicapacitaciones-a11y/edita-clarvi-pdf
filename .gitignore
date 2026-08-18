@@ -1,0 +1,16 @@
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Nada de dependencias: las librerías van versionadas en assets/vendor
+node_modules/
+
+# Pruebas locales
+/pruebas-locales/
+*.tmp
