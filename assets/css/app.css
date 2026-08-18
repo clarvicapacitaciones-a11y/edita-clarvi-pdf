@@ -467,6 +467,28 @@ kbd {
   background: var(--panel-alt); font-family: inherit; font-size: 11.5px; color: var(--texto);
 }
 
+/* ───────────────────────── Opciones de radio ───────────────────────── */
+
+.opciones-radio {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--panel-borde);
+  border-radius: var(--r-s);
+  background: var(--panel-alt);
+}
+.opciones-radio .casilla { font-size: 13px; }
+.opciones-radio .casilla span { color: var(--texto-2); }
+.opciones-radio .casilla b { color: var(--texto); }
+
+.aviso-props.peligro {
+  background: #fdf3f0;
+  border-color: #f0cfc4;
+  color: #8a4423;
+}
+.aviso-props.peligro b { color: #7a3418; }
+
+#compriAviso, #compriResultado { margin: 14px 0 0; }
+
 /* ───────────────────────── Resultado de la comparación ───────────────────────── */
 
 .marca-verde, .marca-roja {

@@ -212,6 +212,43 @@
   </div>
 </div>
 
+<!-- ══════════ Diálogo de compresión ══════════ -->
+<div class="modal" id="modalComprimir" hidden>
+  <div class="modal-caja">
+    <h2>Reducir el tamaño</h2>
+    <p class="modal-ayuda" id="compriInfo"></p>
+
+    <div class="opciones-radio">
+      <label class="casilla">
+        <input type="radio" name="compriModo" value="optimizado" checked>
+        <span><b>Optimizado</b> — conserva el texto</span>
+      </label>
+      <label class="casilla">
+        <input type="radio" name="compriModo" value="maximo">
+        <span><b>Máximo</b> — convierte las páginas en imagen</span>
+      </label>
+    </div>
+
+    <div class="rejilla-form" style="margin-top:14px">
+      <label for="compriNivel">Intensidad</label>
+      <select id="compriNivel">
+        <option value="ligera">Ligera — la mejor calidad</option>
+        <option value="equilibrada" selected>Equilibrada — recomendada</option>
+        <option value="fuerte">Fuerte — el archivo más pequeño</option>
+      </select>
+    </div>
+
+    <p class="aviso-props" id="compriAviso"></p>
+    <p class="aviso-props" id="compriResultado" hidden></p>
+
+    <div class="modal-btns">
+      <button class="btn" id="btnCerrarComprimir">Cancelar</button>
+      <button class="btn" id="btnCalcularCompri">Comprimir</button>
+      <button class="btn btn-primario" id="btnDescargarCompri" disabled>Descargar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ Resultado de la comparación ══════════ -->
 <div class="modal" id="modalComparar" hidden>
   <div class="modal-caja ancha">
@@ -339,6 +376,7 @@
 <script src="assets/js/imagenes.js"></script>
 <script src="assets/js/numeracion.js"></script>
 <script src="assets/js/comparar.js"></script>
+<script src="assets/js/comprimir.js"></script>
 <script src="assets/js/herramientas.js"></script>
 <script src="assets/js/paneles.js"></script>
 <script src="assets/js/exportar.js"></script>

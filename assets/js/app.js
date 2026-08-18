@@ -269,6 +269,7 @@
     if (ctrl) return;
 
     if (ev.key === 'Escape') {
+      if (!util.$('#modalComprimir').hidden) { Clarvi.comprimir.cerrar(); return; }
       if (!util.$('#modalComparar').hidden) { Clarvi.comparar.cerrar(); return; }
       if (!util.$('#modalNumeros').hidden) { Clarvi.numeracion.cerrar(); return; }
       if (!util.$('#modalFirma').hidden) { Clarvi.imagenes.cerrarDialogo(); return; }
@@ -338,6 +339,7 @@
     util.$('#btnAbrir2').addEventListener('click', function () { pedirArchivos(false); });
     util.$('#btnAgregar').addEventListener('click', function () { pedirArchivos(true); });
     util.$('#btnNumerar').addEventListener('click', function () { Clarvi.numeracion.abrir(); });
+    util.$('#btnComprimir').addEventListener('click', function () { Clarvi.comprimir.abrir(); });
     util.$('#btnComparar').addEventListener('click', function () {
       inpComparar.value = '';
       inpComparar.click();
@@ -473,6 +475,7 @@
     Clarvi.imagenes.iniciar();
     Clarvi.numeracion.iniciar();
     Clarvi.comparar.iniciar();
+    Clarvi.comprimir.iniciar();
     conectar();
 
     // Si el usuario ya firmó en otra sesión, se recupera para tenerla a mano.
