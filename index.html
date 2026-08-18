@@ -212,6 +212,18 @@
   </div>
 </div>
 
+<!-- ══════════ Resultado de la comparación ══════════ -->
+<div class="modal" id="modalComparar" hidden>
+  <div class="modal-caja ancha">
+    <h2>Diferencias encontradas</h2>
+    <div id="compCuerpo"></div>
+    <div class="modal-btns">
+      <button class="btn peligro" id="btnQuitarComparacion" hidden>Quitar las marcas</button>
+      <button class="btn btn-primario" id="btnCerrarComparar">Entendido</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ Diálogo de numeración ══════════ -->
 <div class="modal" id="modalNumeros" hidden>
   <div class="modal-caja">
@@ -309,6 +321,7 @@
 
 <input type="file" id="inpArchivos" accept="application/pdf,.pdf" multiple hidden>
 <input type="file" id="inpImagen" accept="image/png,image/jpeg" hidden>
+<input type="file" id="inpComparar" accept="application/pdf,.pdf" hidden>
 <input type="file" id="inpFotoFirma" accept="image/png,image/jpeg" hidden>
 
 <!-- ══════════ Librerías locales (funcionan sin internet) ══════════ -->
@@ -321,10 +334,11 @@
 <script src="assets/js/estado.js"></script>
 <script src="assets/js/geometria.js"></script>
 <script src="assets/js/anotaciones.js"></script>
-<script src="assets/js/imagenes.js"></script>
-<script src="assets/js/numeracion.js"></script>
 <script src="assets/js/documentos.js"></script>
 <script src="assets/js/render.js"></script>
+<script src="assets/js/imagenes.js"></script>
+<script src="assets/js/numeracion.js"></script>
+<script src="assets/js/comparar.js"></script>
 <script src="assets/js/herramientas.js"></script>
 <script src="assets/js/paneles.js"></script>
 <script src="assets/js/exportar.js"></script>

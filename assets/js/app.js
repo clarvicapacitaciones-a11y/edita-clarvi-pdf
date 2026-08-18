@@ -13,7 +13,7 @@
   var docs = Clarvi.docs;
   var exportar = Clarvi.exportar;
 
-  var barraEstado, lienzo, inpArchivos, inpImagen;
+  var barraEstado, lienzo, inpArchivos, inpImagen, inpComparar;
   var modoAnadir = false;
   var ocupado = false;
 
@@ -129,6 +129,27 @@
       paneles.refrescar();
     }).catch(function (err) {
       avisar('No se pudo cargar la imagen: ' + (err.message || err), 'error');
+    });
+  }
+
+  /* ── Comparar con otro PDF ──────────────────────────────────────────── */
+
+  function compararCon(archivo) {
+    ocupado = true;
+    actualizarBotones();
+    avisar('Comparando con «' + archivo.name + '»…');
+
+    Clarvi.comparar.comparar(archivo).then(function (informe) {
+      ocupado = false;
+      actualizarBotones();
+      Clarvi.comparar.mostrarInforme(informe);
+      avisar(informe.totalAnadidas || informe.totalQuitadas
+        ? 'Diferencias en ' + informe.cambiadas + ' página(s).'
+        : 'Los dos documentos tienen el mismo texto.', 'ok');
+    }).catch(function (err) {
+      ocupado = false;
+      actualizarBotones();
+      avisar('No se pudo comparar: ' + (err.message || err), 'error');
     });
   }
 
@@ -248,6 +269,7 @@
     if (ctrl) return;
 
     if (ev.key === 'Escape') {
+      if (!util.$('#modalComparar').hidden) { Clarvi.comparar.cerrar(); return; }
       if (!util.$('#modalNumeros').hidden) { Clarvi.numeracion.cerrar(); return; }
       if (!util.$('#modalFirma').hidden) { Clarvi.imagenes.cerrarDialogo(); return; }
       if (!util.$('#modalAyuda').hidden) { util.$('#modalAyuda').hidden = true; return; }
@@ -316,6 +338,14 @@
     util.$('#btnAbrir2').addEventListener('click', function () { pedirArchivos(false); });
     util.$('#btnAgregar').addEventListener('click', function () { pedirArchivos(true); });
     util.$('#btnNumerar').addEventListener('click', function () { Clarvi.numeracion.abrir(); });
+    util.$('#btnComparar').addEventListener('click', function () {
+      inpComparar.value = '';
+      inpComparar.click();
+    });
+    inpComparar.addEventListener('change', function () {
+      var archivo = inpComparar.files && inpComparar.files[0];
+      if (archivo) compararCon(archivo);
+    });
     util.$('#btnGuardar').addEventListener('click', function () { guardar(false); });
     util.$('#btnExtraer').addEventListener('click', function () { guardar(true); });
 
@@ -427,6 +457,7 @@
     lienzo = util.$('#lienzo');
     inpArchivos = util.$('#inpArchivos');
     inpImagen = util.$('#inpImagen');
+    inpComparar = util.$('#inpComparar');
     lienzo.dataset.herr = 'seleccionar';
 
     if (!raiz.pdfjsLib || !raiz.PDFLib) {
@@ -441,6 +472,7 @@
     paneles.iniciar();
     Clarvi.imagenes.iniciar();
     Clarvi.numeracion.iniciar();
+    Clarvi.comparar.iniciar();
     conectar();
 
     // Si el usuario ya firmó en otra sesión, se recupera para tenerla a mano.

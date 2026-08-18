@@ -467,6 +467,41 @@ kbd {
   background: var(--panel-alt); font-family: inherit; font-size: 11.5px; color: var(--texto);
 }
 
+/* ───────────────────────── Resultado de la comparación ───────────────────────── */
+
+.marca-verde, .marca-roja {
+  display: inline-block;
+  width: 11px; height: 11px;
+  border-radius: 3px;
+  vertical-align: -1px;
+  border: 1px solid rgba(0,0,0,.14);
+}
+.marca-verde { background: #7ddc8f; }
+.marca-roja  { background: #ff6b6b; }
+
+.tabla-comp {
+  width: 100%;
+  margin-top: 14px;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.tabla-comp th, .tabla-comp td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--panel-borde);
+  text-align: left;
+  vertical-align: top;
+}
+.tabla-comp th {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--texto-2); background: var(--panel-alt);
+}
+.tabla-comp td.num { text-align: right; width: 74px; font-variant-numeric: tabular-nums; }
+.tabla-comp td.verde { color: #1f9d63; font-weight: 600; }
+.tabla-comp td.rojo  { color: #c0392b; font-weight: 600; }
+.tabla-comp td.frag  { color: var(--texto-2); }
+#compCuerpo { max-height: 56vh; overflow-y: auto; }
+#compCuerpo .aviso-props { margin-bottom: 10px; }
+
 /* ───────────────────────── Formularios de diálogo ───────────────────────── */
 
 .rejilla-form {

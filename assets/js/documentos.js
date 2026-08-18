@@ -214,6 +214,9 @@
   }
 
   Clarvi.docs = {
+    /** Abre un PDF con pdf.js sin registrarlo como parte del documento.
+        Lo usa la comparación, que sólo necesita leer el otro archivo. */
+    abrirSuelto: abrirConPdfjs,
     cargarPdf: cargarPdf,
     paginasDe: paginasDe,
     abrirArchivos: abrirArchivos,
