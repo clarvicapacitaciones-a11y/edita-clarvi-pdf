@@ -47,6 +47,9 @@
   function actualizarBotones() {
     var hay = estado.hayDocumento();
     util.$('#btnAgregar').disabled = !hay || ocupado;
+    util.$('#btnNumerar').disabled = !hay || ocupado;
+    util.$('#btnComparar').disabled = !hay || ocupado;
+    util.$('#btnComprimir').disabled = !hay || ocupado;
     util.$('#btnGuardar').disabled = !hay || ocupado;
     util.$('#btnExtraer').disabled = !hay || ocupado || estado.paginasSel.size === 0;
     util.$('#btnDeshacer').disabled = !estado.puedeDeshacer();
@@ -245,6 +248,7 @@
     if (ctrl) return;
 
     if (ev.key === 'Escape') {
+      if (!util.$('#modalNumeros').hidden) { Clarvi.numeracion.cerrar(); return; }
       if (!util.$('#modalFirma').hidden) { Clarvi.imagenes.cerrarDialogo(); return; }
       if (!util.$('#modalAyuda').hidden) { util.$('#modalAyuda').hidden = true; return; }
       herr.cerrarEditor(true);
@@ -311,6 +315,7 @@
     util.$('#btnAbrir').addEventListener('click', function () { pedirArchivos(false); });
     util.$('#btnAbrir2').addEventListener('click', function () { pedirArchivos(false); });
     util.$('#btnAgregar').addEventListener('click', function () { pedirArchivos(true); });
+    util.$('#btnNumerar').addEventListener('click', function () { Clarvi.numeracion.abrir(); });
     util.$('#btnGuardar').addEventListener('click', function () { guardar(false); });
     util.$('#btnExtraer').addEventListener('click', function () { guardar(true); });
 
@@ -435,6 +440,7 @@
     herr.iniciar();
     paneles.iniciar();
     Clarvi.imagenes.iniciar();
+    Clarvi.numeracion.iniciar();
     conectar();
 
     // Si el usuario ya firmó en otra sesión, se recupera para tenerla a mano.

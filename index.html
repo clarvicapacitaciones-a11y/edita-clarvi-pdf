@@ -34,6 +34,18 @@
       <button class="btn btn-icono" id="btnRehacer" title="Rehacer (Ctrl+Y)" disabled>↷</button>
     </div>
 
+    <div class="grupo-acc centro">
+      <button class="btn" id="btnNumerar" title="Numerar las páginas del documento" disabled>
+        <span class="ico">#️⃣</span> <span class="rotulo">Numerar</span>
+      </button>
+      <button class="btn" id="btnComparar" title="Comparar con otro PDF y marcar las diferencias" disabled>
+        <span class="ico">⇄</span> <span class="rotulo">Comparar</span>
+      </button>
+      <button class="btn" id="btnComprimir" title="Reducir el tamaño del archivo" disabled>
+        <span class="ico">🗜️</span> <span class="rotulo">Comprimir</span>
+      </button>
+    </div>
+
     <div class="grupo-acc derecha">
       <button class="btn" id="btnExtraer" title="Guardar las páginas seleccionadas en un PDF nuevo" disabled>
         <span class="ico">✂️</span> Extraer
@@ -178,6 +190,15 @@
           <li>Al cambiar el tamaño de una imagen se conserva su proporción;
               con <kbd>Shift</kbd> se libera</li>
         </ul>
+        <h3>Documento completo</h3>
+        <ul class="lista-ayuda">
+          <li><b>Numerar</b> — pone el número en todas las páginas, con formato,
+              posición y rango a tu gusto. En una página girada el número sigue
+              saliendo derecho.</li>
+          <li><b>Comparar</b> — enfrenta este PDF con otro y marca lo que cambia.</li>
+          <li><b>Comprimir</b> — reduce el peso del archivo.</li>
+        </ul>
+
         <h3>Unir, ordenar y extraer</h3>
         <ul class="lista-ayuda">
           <li><b>Unir PDF</b> añade los archivos al final del documento.</li>
@@ -188,6 +209,66 @@
       </div>
     </div>
     <div class="modal-btns"><button class="btn btn-primario" id="btnCerrarAyuda">Entendido</button></div>
+  </div>
+</div>
+
+<!-- ══════════ Diálogo de numeración ══════════ -->
+<div class="modal" id="modalNumeros" hidden>
+  <div class="modal-caja">
+    <h2>Numerar las páginas</h2>
+
+    <div class="rejilla-form">
+      <label for="numFormato">Formato</label>
+      <select id="numFormato"></select>
+
+      <label>Posición</label>
+      <div class="rejilla-pos">
+        <button data-pos="ai" title="Arriba izquierda"></button>
+        <button data-pos="ac" title="Arriba centro"></button>
+        <button data-pos="ad" title="Arriba derecha"></button>
+        <button data-pos="bi" title="Abajo izquierda"></button>
+        <button data-pos="bc" class="act" title="Abajo centro"></button>
+        <button data-pos="bd" title="Abajo derecha"></button>
+      </div>
+
+      <label for="numMargen">Margen</label>
+      <div class="fila-compacta">
+        <input type="number" id="numMargen" min="0" max="200" step="2" value="36"> <span>pt</span>
+      </div>
+
+      <label for="numFuente">Tipografía</label>
+      <div class="fila-compacta">
+        <select id="numFuente">
+          <option value="Helvetica">Helvetica / Arial</option>
+          <option value="Times">Times / Serif</option>
+          <option value="Courier">Courier / Mono</option>
+        </select>
+        <input type="number" id="numTam" min="5" max="72" step="1" value="10" title="Tamaño">
+        <input type="color" id="numColor" value="#333333" title="Color">
+      </div>
+
+      <label for="numDesde">Páginas</label>
+      <div class="fila-compacta">
+        <span>de</span> <input type="number" id="numDesde" min="1" value="1">
+        <span>a</span> <input type="number" id="numHasta" min="1" value="1">
+      </div>
+
+      <label for="numEmpezar">Empezar en</label>
+      <div class="fila-compacta">
+        <input type="number" id="numEmpezar" min="0" value="1">
+      </div>
+
+      <label></label>
+      <label class="casilla"><input type="checkbox" id="numOmitir"> No numerar la primera página</label>
+    </div>
+
+    <p class="aviso-props" id="numPrevia"></p>
+
+    <div class="modal-btns">
+      <button class="btn peligro" id="btnQuitarNumeros" hidden>Quitar numeración</button>
+      <button class="btn" id="btnCancelarNumeros">Cancelar</button>
+      <button class="btn btn-primario" id="btnAplicarNumeros">Aplicar</button>
+    </div>
   </div>
 </div>
 
@@ -241,6 +322,7 @@
 <script src="assets/js/geometria.js"></script>
 <script src="assets/js/anotaciones.js"></script>
 <script src="assets/js/imagenes.js"></script>
+<script src="assets/js/numeracion.js"></script>
 <script src="assets/js/documentos.js"></script>
 <script src="assets/js/render.js"></script>
 <script src="assets/js/herramientas.js"></script>
