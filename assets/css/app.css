@@ -627,6 +627,151 @@ label.casilla {
   color: #fff; font-size: 20px; font-weight: 600;
 }
 
+/* ═══════════════════════ Iconos ═══════════════════════
+   Todos los iconos son SVG a trazo con currentColor, así que toman el color
+   del botón que los contiene: gris en los paneles, blanco cuando el botón está
+   activo o es de color. Nada de emoji, que salen a color y distintos en cada
+   sistema. */
+
+[data-icono] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  flex: 0 0 auto;
+}
+[data-icono] svg { width: 1em; height: 1em; display: block; }
+
+.btn .ico { font-size: 16px; }
+.mini-btn[data-icono] { font-size: 15px; }
+.herr [data-icono] { font-size: 19px; height: 20px; }
+.barra-inf .mini-btn[data-icono] { font-size: 14px; }
+.vacio-ico[data-icono] { font-size: 42px; color: var(--marca); }
+.vacio-lista [data-icono] { font-size: 15px; margin-right: 8px; vertical-align: -3px; color: var(--texto-2); }
+.firma-ops [data-icono] { font-size: 14px; margin-right: 4px; vertical-align: -2px; }
+
+/* ═══════════════════════ Panel de páginas ═══════════════════════ */
+
+.panel-cab .pista {
+  font-size: 10px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #a8b1c2;
+}
+
+/* ── Lista de documentos ── */
+
+.lista-docs {
+  flex: 0 0 auto;
+  max-height: 172px;
+  overflow-y: auto;
+  padding: 6px;
+  border-bottom: 1px solid var(--panel-borde);
+  position: relative;
+}
+
+.doc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--r-s);
+  cursor: pointer;
+  font-size: 12.5px;
+  user-select: none;
+}
+.doc:hover { background: var(--panel-alt); }
+.doc.actual { border-color: #b9c9e6; background: #f2f6fd; }
+.doc.arrastrando { opacity: .4; }
+.doc [data-icono] { font-size: 15px; color: var(--texto-2); }
+.doc .doc-nombre {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--texto);
+}
+.doc .doc-pags { color: var(--texto-2); font-size: 11.5px; white-space: nowrap; }
+.doc .doc-mezcla {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #fdf0e2;
+  color: #9a6320;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.doc .doc-quitar {
+  border: 0;
+  background: none;
+  padding: 2px;
+  border-radius: 3px;
+  color: #aab2c0;
+  cursor: pointer;
+  line-height: 0;
+  font-size: 14px;
+}
+.doc .doc-quitar:hover { background: #fdecec; color: #c0392b; }
+
+/* ── Miniaturas ── */
+
+.lista-min { position: relative; }
+
+.min .min-marca {
+  position: absolute;
+  top: 5px; left: 5px;
+  width: 17px; height: 17px;
+  border-radius: 4px;
+  background: rgba(255,255,255,.94);
+  border: 1px solid #b9c1cf;
+  color: transparent;
+  font-size: 11px;
+  line-height: 15px;
+  text-align: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: background .12s, border-color .12s;
+}
+.min .min-marca:hover { border-color: var(--marca); background: #fff; }
+.min.sel .min-marca {
+  background: var(--marca);
+  border-color: var(--marca-osc);
+  color: #fff;
+}
+
+/* ── Marca de inserción al arrastrar ── */
+
+.marca-insercion {
+  position: absolute;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--marca);
+  pointer-events: none;
+  z-index: 5;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.8);
+}
+.marca-insercion.horizontal { width: 3px; height: auto; }
+.ordenando { cursor: grabbing; }
+.ordenando * { cursor: grabbing !important; }
+
+/* ── Acciones al pie del panel ── */
+
+.panel-pag .acciones-pag {
+  border-bottom: 0;
+  border-top: 1px solid var(--panel-borde);
+  margin-top: auto;
+}
+
+/* ── Barra de herramientas reordenable ── */
+
+.herr-orden {
+  margin-top: 6px;
+  opacity: .55;
+}
+.herr-orden:hover { opacity: 1; }
+
 /* ───────────────────────── Barras de desplazamiento ───────────────────────── */
 
 .lienzo::-webkit-scrollbar, .lista-min::-webkit-scrollbar, .props-cuerpo::-webkit-scrollbar,

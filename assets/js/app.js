@@ -97,6 +97,86 @@
     });
   }
 
+  /* ── Orden de la barra de herramientas ──────────────────────────────────
+     El usuario puede colocar las herramientas como le venga bien arrastrando;
+     el orden se recuerda para la próxima vez. */
+
+  var CLAVE_ORDEN = 'clarvi.ordenHerramientas';
+  var ordenDefecto = [];
+
+  function herramientasEnPantalla() {
+    return util.$$('.herr[data-herr]').map(function (b) { return b.dataset.herr; });
+  }
+
+  function leerOrdenGuardado() {
+    try {
+      var crudo = raiz.localStorage.getItem(CLAVE_ORDEN);
+      var lista = crudo ? JSON.parse(crudo) : null;
+      return Array.isArray(lista) ? lista : null;
+    } catch (e) { return null; }
+  }
+
+  function guardarOrden() {
+    try { raiz.localStorage.setItem(CLAVE_ORDEN, JSON.stringify(herramientasEnPantalla())); }
+    catch (e) { /* modo privado o sin espacio: no es grave */ }
+    actualizarBotonOrden();
+  }
+
+  /** Coloca los botones según una lista, dejando al final los que no aparezcan. */
+  function aplicarOrden(lista) {
+    if (!lista) return;
+    var barra = util.$('#herramientas');
+    var porNombre = {};
+    util.$$('.herr[data-herr]').forEach(function (b) { porNombre[b.dataset.herr] = b; });
+
+    var separador = util.$('.herr-sep', barra);
+    lista.forEach(function (nombre) {
+      var b = porNombre[nombre];
+      if (b) { barra.insertBefore(b, separador); delete porNombre[nombre]; }
+    });
+    // Las que no estaban en la lista guardada (herramientas nuevas) van al final.
+    Object.keys(porNombre).forEach(function (nombre) {
+      barra.insertBefore(porNombre[nombre], separador);
+    });
+    actualizarBotonOrden();
+  }
+
+  function actualizarBotonOrden() {
+    var boton = util.$('#btnOrdenDefecto');
+    if (!boton) return;
+    boton.hidden = herramientasEnPantalla().join(',') === ordenDefecto.join(',');
+  }
+
+  function restablecerOrden() {
+    aplicarOrden(ordenDefecto);
+    try { raiz.localStorage.removeItem(CLAVE_ORDEN); } catch (e) { /* nada */ }
+    actualizarBotonOrden();
+    avisar('Herramientas de vuelta a su orden original.', 'ok');
+  }
+
+  function prepararHerramientas() {
+    ordenDefecto = herramientasEnPantalla();
+    aplicarOrden(leerOrdenGuardado());
+
+    Clarvi.ordenar.activar({
+      contenedor: util.$('#herramientas'),
+      selector: '.herr[data-herr]',
+      id: function (el) { return el.dataset.herr; },
+      alClic: function (nombre) { elegirHerramienta(nombre); },
+      alSoltar: function (origen, destino, antes) {
+        var barra = util.$('#herramientas');
+        var elOrigen = util.$('.herr[data-herr="' + origen + '"]', barra);
+        var elDestino = util.$('.herr[data-herr="' + destino + '"]', barra);
+        if (!elOrigen || !elDestino) return;
+        barra.insertBefore(elOrigen, antes ? elDestino : elDestino.nextSibling);
+        guardarOrden();
+      }
+    });
+
+    var boton = util.$('#btnOrdenDefecto');
+    if (boton) boton.addEventListener('click', restablecerOrden);
+  }
+
   /* ── Imagen y firma ─────────────────────────────────────────────────── */
 
   /** ¿Hay ya una imagen preparada del tipo que toca? */
@@ -364,9 +444,8 @@
     util.$('#btnDeshacer').addEventListener('click', function () { if (estado.deshacer()) trasHistorial(); });
     util.$('#btnRehacer').addEventListener('click', function () { if (estado.rehacer()) trasHistorial(); });
 
-    util.$$('.herr').forEach(function (b) {
-      b.addEventListener('click', function () { elegirHerramienta(b.dataset.herr); });
-    });
+    // El clic de las herramientas lo despacha ordenar.js, que distingue entre
+    // pulsar y arrastrar para reordenar.
 
     /* Panel de páginas */
     util.$('#btnSelTodo').addEventListener('click', function () {
@@ -469,9 +548,12 @@
       return;
     }
 
+    Clarvi.iconos.pintarTodos();
+
     render.iniciar();
     herr.iniciar();
     paneles.iniciar();
+    prepararHerramientas();
     Clarvi.imagenes.iniciar();
     Clarvi.numeracion.iniciar();
     Clarvi.comparar.iniciar();

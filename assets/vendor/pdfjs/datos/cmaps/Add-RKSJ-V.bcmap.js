@@ -1,0 +1,4 @@
+/* Generado desde cmaps/Add-RKSJ-V.bcmap. Permite que pdf.js cargue este dato
+   cuando la app se abre con doble clic (file://), donde el navegador
+   prohíbe descargar archivos pero sí deja ejecutar scripts. */
+(window.CLARVI_DATOS=window.CLARVI_DATOS||{})["Add-RKSJ-V.bcmap"]="A+BSQ29weXJpZ2h0IDE5OTAtMjAwOSBBZG9iZSBTeXN0ZW1zIEluY29ycG9yYXRlZC4KQWxsIHJpZ2h0cyByZXNlcnZlZC4KU2VlIC4vTElDRU5TReEKQWRkLVJLU0otSGELgUEBvU8AAMBMAADAUgsBvVEJAr1TAgS9VgAAwFoAAMBTAADAWAAAwFUAEb1bQQqCn71uAQABAAEAAQAZAB8AAQABAAYAYQGC8wHASEEKg0C9eAEAAQABAAEAGQAgAAEAAQAGAGEHg5UBvgKB0WEAvgcAAL4EAADBCQAAvgUAAMEKAAHBE1EL7IC+CYYQhg8GhhiGFweGEgSGE4YIYQfsiwHBHQAAwSYAAMElAADBIQAAwSQEAMEEhXwAwQ0=";

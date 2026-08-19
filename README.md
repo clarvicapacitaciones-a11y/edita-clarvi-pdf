@@ -31,13 +31,11 @@ Tienes tres formas, todas sin instalar nada:
 | **Linux** | Ejecuta **`./abrir.sh`** |
 
 Los lanzadores buscan si ya tienes Python o Node en el equipo. Si los
-encuentran, levantan un servidor local (`127.0.0.1`) que da la máxima fidelidad
-de reproducción; si no los encuentran, abren el archivo directamente. **En los
-dos casos funciona igual de bien** — la única diferencia es que, abriendo
-`index.html` a pelo, los navegadores no permiten cargar las fuentes tipográficas
-de reserva de pdf.js, así que un PDF que *no* lleve sus fuentes incrustadas se
-verá con una fuente parecida del sistema en lugar de la original. El texto, las
-medidas y el PDF guardado son idénticos.
+encuentran, levantan un servidor local (`127.0.0.1`); si no, abren el archivo
+directamente. **En los dos casos funciona igual**: aunque los navegadores no
+dejan descargar archivos desde `file://`, la aplicación le hace llegar a pdf.js
+sus fuentes y tablas de caracteres por otra vía, así que la reproducción es la
+misma con doble clic que servida.
 
 ### Navegadores
 
@@ -69,6 +67,10 @@ Chrome, Edge, Firefox, Brave u Opera recientes. También Safari 16 o superior.
 - **Borrador** — quita los objetos que hayas añadido.
 - **Copiar** — activa la selección del texto original para copiarlo con
   <kbd>Ctrl</kbd>+<kbd>C</kbd>.
+
+**Puedes colocar las herramientas en el orden que te convenga**: arrástralas
+dentro de la barra y se recordará para la próxima vez. Si te arrepientes,
+aparece un botón al final de la barra para devolverlas a su sitio.
 
 Todo se puede seleccionar, mover, redimensionar, reordenar (al frente / al
 fondo), duplicar y borrar, con **deshacer y rehacer** ilimitados dentro de la
@@ -102,10 +104,29 @@ sesión.
 
 ### Organizar páginas
 
+En el panel de la izquierda, arriba tienes la lista de **documentos abiertos** y
+debajo las **miniaturas** de todas las páginas.
+
+| Lo que haces | Lo que pasa |
+|---|---|
+| Clic en una miniatura | Vas a esa página (no la marca) |
+| Clic en el recuadro de la esquina | Marcas o desmarcas esa página |
+| Clic en otro recuadro | Se **suma** a lo marcado, sin pulsar teclas |
+| <kbd>Shift</kbd> + clic en un recuadro | Marcas el rango entero |
+| Arrastrar una miniatura | La cambias de sitio |
+| Arrastrar un documento de la lista | Mueves **todas** sus páginas en bloque |
+
+Las acciones (girar, duplicar, eliminar) aparecen al pie del panel en cuanto
+marcas alguna página. Y según vas bajando por el documento, la lista de
+miniaturas se mueve sola para que siempre veas dónde estás.
+
 - **Unir PDF** — añade más archivos al final del documento.
-- **Reordenar** — arrastra las miniaturas del panel izquierdo.
 - **Girar** 90° a izquierda o derecha, **duplicar** y **eliminar**.
 - **Extraer** — guarda sólo las páginas que marques en un PDF nuevo.
+
+> Si mueves un documento cuyas páginas has entremezclado a mano con las de otro,
+> verás el aviso **mezclado** en su fila: al moverlo, sus páginas volverán a
+> quedar juntas.
 
 ### Guardar
 
@@ -218,6 +239,8 @@ assets/
   js/
     arranque.js       Adapta pdf.js a file:// o http://
     util.js           Utilidades generales
+    iconos.js         Juego de iconos SVG
+    ordenar.js        Arrastrar para ordenar, con clic alternativo
     estado.js         Modelo de datos e historial deshacer/rehacer
     geometria.js      Conversiones página ↔ pantalla y giros
     anotaciones.js    Objetos dibujables y su pintado
