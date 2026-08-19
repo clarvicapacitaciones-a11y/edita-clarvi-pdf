@@ -24,24 +24,36 @@
 
     <div class="grupo-acc">
       <button class="btn btn-primario" id="btnAbrir" title="Abrir uno o varios PDF (Ctrl+O)">
-        <span class="ico">📂</span> Abrir
+        <span class="ico" data-icono="abrir"></span> Abrir
       </button>
       <button class="btn" id="btnAgregar" title="Añadir más PDF al final (unir)" disabled>
-        <span class="ico">➕</span> Unir PDF
+        <span class="ico" data-icono="unir"></span> Unir PDF
       </button>
       <span class="sep"></span>
-      <button class="btn btn-icono" id="btnDeshacer" title="Deshacer (Ctrl+Z)" disabled>↶</button>
-      <button class="btn btn-icono" id="btnRehacer" title="Rehacer (Ctrl+Y)" disabled>↷</button>
+      <button class="btn btn-icono" id="btnDeshacer" title="Deshacer (Ctrl+Z)" data-icono="deshacer" disabled></button>
+      <button class="btn btn-icono" id="btnRehacer" title="Rehacer (Ctrl+Y)" data-icono="rehacer" disabled></button>
+    </div>
+
+    <div class="grupo-acc centro">
+      <button class="btn" id="btnNumerar" title="Numerar las páginas del documento" disabled>
+        <span class="ico" data-icono="numerar"></span> <span class="rotulo">Numerar</span>
+      </button>
+      <button class="btn" id="btnComparar" title="Comparar con otro PDF y marcar las diferencias" disabled>
+        <span class="ico" data-icono="comparar"></span> <span class="rotulo">Comparar</span>
+      </button>
+      <button class="btn" id="btnComprimir" title="Reducir el tamaño del archivo" disabled>
+        <span class="ico" data-icono="comprimir"></span> <span class="rotulo">Comprimir</span>
+      </button>
     </div>
 
     <div class="grupo-acc derecha">
       <button class="btn" id="btnExtraer" title="Guardar las páginas seleccionadas en un PDF nuevo" disabled>
-        <span class="ico">✂️</span> Extraer
+        <span class="ico" data-icono="extraer"></span> Extraer
       </button>
       <button class="btn btn-exito" id="btnGuardar" title="Guardar el PDF editado (Ctrl+S)" disabled>
-        <span class="ico">💾</span> Guardar PDF
+        <span class="ico" data-icono="guardar"></span> Guardar PDF
       </button>
-      <button class="btn btn-icono" id="btnAyuda" title="Ayuda y atajos">?</button>
+      <button class="btn btn-icono" id="btnAyuda" title="Ayuda y atajos" data-icono="ayuda"></button>
     </div>
   </header>
 
@@ -50,52 +62,67 @@
 
     <!-- Panel de páginas -->
     <aside class="panel-pag" id="panelPag">
+      <div class="panel-cab" id="cabDocs" hidden>
+        <span>Documentos</span>
+        <span class="pista">arrastra para ordenar</span>
+      </div>
+      <div class="lista-docs" id="listaDocs" hidden></div>
+
       <div class="panel-cab">
         <span>Páginas</span>
         <div class="cab-btns">
-          <button class="mini-btn" id="btnSelTodo" title="Seleccionar / quitar todas">☑</button>
+          <button class="mini-btn" id="btnSelTodo" data-icono="marcarTodo"
+                  title="Marcar o desmarcar todas"></button>
         </div>
       </div>
+
+      <div class="lista-min" id="listaMin"></div>
+
       <div class="acciones-pag" id="accionesPag" hidden>
         <span id="contSel">0</span>
-        <button class="mini-btn" id="btnRotIzq"   title="Girar 90° a la izquierda">⟲</button>
-        <button class="mini-btn" id="btnRotDer"   title="Girar 90° a la derecha">⟳</button>
-        <button class="mini-btn" id="btnDuplicar" title="Duplicar">⧉</button>
-        <button class="mini-btn peligro" id="btnBorrarPag" title="Eliminar">🗑</button>
+        <button class="mini-btn" id="btnRotIzq"   data-icono="girarIzq" title="Girar 90° a la izquierda"></button>
+        <button class="mini-btn" id="btnRotDer"   data-icono="girarDer" title="Girar 90° a la derecha"></button>
+        <button class="mini-btn" id="btnDuplicar" data-icono="duplicar" title="Duplicar"></button>
+        <button class="mini-btn peligro" id="btnBorrarPag" data-icono="eliminar" title="Eliminar"></button>
       </div>
-      <div class="lista-min" id="listaMin"></div>
     </aside>
 
     <!-- Herramientas -->
     <nav class="herramientas" id="herramientas" aria-label="Herramientas">
-      <button class="herr activa" data-herr="seleccionar" title="Seleccionar y mover objetos (V)"><span>➤</span><em>Mover</em></button>
-      <button class="herr" data-herr="texto"    title="Añadir un cuadro de texto (T)"><span class="tipo-t">T</span><em>Texto</em></button>
-      <button class="herr" data-herr="editar"   title="Editar un texto que ya está en el PDF (E)"><span>✎</span><em>Editar</em></button>
-      <button class="herr" data-herr="resaltar" title="Resaltar como marcatextos (H)"><span>▬</span><em>Resaltar</em></button>
-      <button class="herr" data-herr="lapiz"    title="Dibujar a mano alzada (P)"><span>✏️</span><em>Lápiz</em></button>
-      <button class="herr" data-herr="linea"    title="Línea recta (L)"><span>╱</span><em>Línea</em></button>
-      <button class="herr" data-herr="flecha"   title="Flecha (F)"><span>➚</span><em>Flecha</em></button>
-      <button class="herr" data-herr="rect"     title="Rectángulo (R)"><span>▭</span><em>Rect.</em></button>
-      <button class="herr" data-herr="elipse"   title="Elipse o círculo (C)"><span>◯</span><em>Elipse</em></button>
-      <button class="herr" data-herr="tapar"    title="Tapar u ocultar contenido (W)"><span>▨</span><em>Tapar</em></button>
-      <button class="herr" data-herr="borrar"   title="Borrar objetos añadidos (D)"><span>🧽</span><em>Borrar</em></button>
+      <button class="herr activa" data-herr="seleccionar" title="Seleccionar y mover objetos (V)"><span data-icono="seleccionar"></span><em>Mover</em></button>
+      <button class="herr" data-herr="texto"    title="Añadir un cuadro de texto (T)"><span data-icono="texto"></span><em>Texto</em></button>
+      <button class="herr" data-herr="editar"   title="Editar un texto que ya está en el PDF (E)"><span data-icono="editar"></span><em>Editar</em></button>
+      <button class="herr" data-herr="resaltar" title="Resaltar como marcatextos (H)"><span data-icono="resaltar"></span><em>Resaltar</em></button>
+      <button class="herr" data-herr="lapiz"    title="Dibujar a mano alzada (P)"><span data-icono="lapiz"></span><em>Lápiz</em></button>
+      <button class="herr" data-herr="linea"    title="Línea recta (L)"><span data-icono="linea"></span><em>Línea</em></button>
+      <button class="herr" data-herr="flecha"   title="Flecha (F)"><span data-icono="flecha"></span><em>Flecha</em></button>
+      <button class="herr" data-herr="rect"     title="Rectángulo (R)"><span data-icono="rect"></span><em>Rect.</em></button>
+      <button class="herr" data-herr="elipse"   title="Elipse o círculo (C)"><span data-icono="elipse"></span><em>Elipse</em></button>
+      <button class="herr" data-herr="tapar"    title="Tapar u ocultar contenido (W)"><span data-icono="tapar"></span><em>Tapar</em></button>
+      <button class="herr" data-herr="imagen"   title="Insertar una imagen desde tu equipo (I)"><span data-icono="imagen"></span><em>Imagen</em></button>
+      <button class="herr" data-herr="firma"    title="Estampar tu firma (S)"><span data-icono="firma"></span><em>Firma</em></button>
+      <button class="herr" data-herr="borrar"   title="Borrar objetos añadidos (D)"><span data-icono="borrar"></span><em>Borrar</em></button>
       <span class="herr-sep"></span>
-      <button class="herr" data-herr="seltexto" title="Seleccionar y copiar el texto del PDF"><span>⌶</span><em>Copiar</em></button>
+      <button class="herr" data-herr="seltexto" title="Seleccionar y copiar el texto del PDF"><span data-icono="seltexto"></span><em>Copiar</em></button>
+      <button class="herr herr-orden" id="btnOrdenDefecto" hidden
+              title="Devolver las herramientas a su orden original">
+        <span data-icono="restablecer"></span><em>Orden</em>
+      </button>
     </nav>
 
     <!-- Lienzo -->
     <main class="lienzo" id="lienzo" tabindex="0">
       <div class="vacio" id="vacio">
         <div class="vacio-caja">
-          <div class="vacio-ico">📄</div>
+          <div class="vacio-ico" data-icono="bienvenida"></div>
           <h1>Editor de PDF sin instalación</h1>
           <p>Arrastra aquí tus archivos <b>PDF</b>, o pulsa el botón.</p>
-          <button class="btn btn-primario grande" id="btnAbrir2">📂 Abrir archivos PDF</button>
+          <button class="btn btn-primario grande" id="btnAbrir2"><span class="ico" data-icono="abrir"></span> Abrir archivos PDF</button>
           <ul class="vacio-lista">
-            <li>✏️ Escribe, corrige, dibuja, resalta y tapa contenido</li>
-            <li>🔗 Une varios PDF en uno solo</li>
-            <li>🔄 Gira, reordena, duplica, elimina y extrae páginas</li>
-            <li>🔒 Todo ocurre en tu equipo: ningún archivo sale de aquí</li>
+            <li><span data-icono="lapiz"></span> Escribe, corrige, dibuja, resalta y tapa contenido</li>
+            <li><span data-icono="unir"></span> Une varios PDF en uno solo</li>
+            <li><span data-icono="girarDer"></span> Gira, reordena, duplica, elimina y extrae páginas</li>
+            <li><span data-icono="candado"></span> Todo ocurre en tu equipo: ningún archivo sale de aquí</li>
           </ul>
         </div>
       </div>
@@ -113,13 +140,13 @@
   <footer class="barra-inf">
     <div class="estado" id="estado">Listo</div>
     <div class="nav-pag">
-      <button class="mini-btn" id="btnPagAnt" title="Página anterior">‹</button>
+      <button class="mini-btn" id="btnPagAnt" title="Página anterior" data-icono="anterior"></button>
       <input type="number" id="inpPag" min="1" value="1" title="Ir a la página">
       <span id="totalPag">/ 0</span>
-      <button class="mini-btn" id="btnPagSig" title="Página siguiente">›</button>
+      <button class="mini-btn" id="btnPagSig" title="Página siguiente" data-icono="siguiente"></button>
     </div>
     <div class="zoom">
-      <button class="mini-btn" id="btnZoomMenos" title="Alejar (Ctrl −)">−</button>
+      <button class="mini-btn" id="btnZoomMenos" title="Alejar (Ctrl −)" data-icono="zoomMenos"></button>
       <select id="selZoom" title="Nivel de zoom">
         <option value="ancho">Ajustar ancho</option>
         <option value="pagina">Página completa</option>
@@ -133,7 +160,7 @@
         <option value="3">300 %</option>
         <option value="4">400 %</option>
       </select>
-      <button class="mini-btn" id="btnZoomMas" title="Acercar (Ctrl +)">+</button>
+      <button class="mini-btn" id="btnZoomMas" title="Acercar (Ctrl +)" data-icono="zoomMas"></button>
     </div>
   </footer>
 </div>
@@ -154,6 +181,10 @@
           <li><b>Línea, Flecha, Rect., Elipse</b> — formas; con <kbd>Shift</kbd> se fuerzan
               ángulos rectos y proporciones cuadradas.</li>
           <li><b>Tapar</b> — cubre con un rectángulo opaco (censurar).</li>
+          <li><b>Imagen</b> — inserta un PNG o JPG de tu equipo. Clic para el tamaño
+              natural, o arrastra para encajarla.</li>
+          <li><b>Firma</b> — dibújala una vez (o importa una foto y se le quita el
+              fondo del papel) y estámpala donde quieras. Se recuerda para la próxima vez.</li>
           <li><b>Borrar</b> — elimina objetos añadidos (no el contenido original).</li>
           <li><b>Copiar</b> — activa la selección del texto original del PDF.</li>
         </ul>
@@ -168,8 +199,19 @@
           <li><kbd>Ctrl</kbd> + rueda, o <kbd>Ctrl</kbd>+<kbd>+</kbd>/<kbd>−</kbd>, para el zoom</li>
           <li>Flechas: mover 1 pt · con <kbd>Shift</kbd>: 10 pt</li>
           <li><kbd>Esc</kbd> cancelar y volver a Mover</li>
-          <li><kbd>V T E H P L F R C W D</kbd> — elegir herramienta</li>
+          <li><kbd>V T E H P L F R C W I S D</kbd> — elegir herramienta</li>
+          <li>Al cambiar el tamaño de una imagen se conserva su proporción;
+              con <kbd>Shift</kbd> se libera</li>
         </ul>
+        <h3>Documento completo</h3>
+        <ul class="lista-ayuda">
+          <li><b>Numerar</b> — pone el número en todas las páginas, con formato,
+              posición y rango a tu gusto. En una página girada el número sigue
+              saliendo derecho.</li>
+          <li><b>Comparar</b> — enfrenta este PDF con otro y marca lo que cambia.</li>
+          <li><b>Comprimir</b> — reduce el peso del archivo.</li>
+        </ul>
+
         <h3>Unir, ordenar y extraer</h3>
         <ul class="lista-ayuda">
           <li><b>Unir PDF</b> añade los archivos al final del documento.</li>
@@ -183,9 +225,154 @@
   </div>
 </div>
 
+<!-- ══════════ Diálogo de compresión ══════════ -->
+<div class="modal" id="modalComprimir" hidden>
+  <div class="modal-caja">
+    <h2>Reducir el tamaño</h2>
+    <p class="modal-ayuda" id="compriInfo"></p>
+
+    <div class="opciones-radio">
+      <label class="casilla">
+        <input type="radio" name="compriModo" value="optimizado" checked>
+        <span><b>Optimizado</b> — conserva el texto</span>
+      </label>
+      <label class="casilla">
+        <input type="radio" name="compriModo" value="maximo">
+        <span><b>Máximo</b> — convierte las páginas en imagen</span>
+      </label>
+    </div>
+
+    <div class="rejilla-form" style="margin-top:14px">
+      <label for="compriNivel">Intensidad</label>
+      <select id="compriNivel">
+        <option value="ligera">Ligera — la mejor calidad</option>
+        <option value="equilibrada" selected>Equilibrada — recomendada</option>
+        <option value="fuerte">Fuerte — el archivo más pequeño</option>
+      </select>
+    </div>
+
+    <p class="aviso-props" id="compriAviso"></p>
+    <p class="aviso-props" id="compriResultado" hidden></p>
+
+    <div class="modal-btns">
+      <button class="btn" id="btnCerrarComprimir">Cancelar</button>
+      <button class="btn" id="btnCalcularCompri">Comprimir</button>
+      <button class="btn btn-primario" id="btnDescargarCompri" disabled>Descargar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ Resultado de la comparación ══════════ -->
+<div class="modal" id="modalComparar" hidden>
+  <div class="modal-caja ancha">
+    <h2>Diferencias encontradas</h2>
+    <div id="compCuerpo"></div>
+    <div class="modal-btns">
+      <button class="btn peligro" id="btnQuitarComparacion" hidden>Quitar las marcas</button>
+      <button class="btn btn-primario" id="btnCerrarComparar">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ Diálogo de numeración ══════════ -->
+<div class="modal" id="modalNumeros" hidden>
+  <div class="modal-caja">
+    <h2>Numerar las páginas</h2>
+
+    <div class="rejilla-form">
+      <label for="numFormato">Formato</label>
+      <select id="numFormato"></select>
+
+      <label>Posición</label>
+      <div class="rejilla-pos">
+        <button data-pos="ai" title="Arriba izquierda"></button>
+        <button data-pos="ac" title="Arriba centro"></button>
+        <button data-pos="ad" title="Arriba derecha"></button>
+        <button data-pos="bi" title="Abajo izquierda"></button>
+        <button data-pos="bc" class="act" title="Abajo centro"></button>
+        <button data-pos="bd" title="Abajo derecha"></button>
+      </div>
+
+      <label for="numMargen">Margen</label>
+      <div class="fila-compacta">
+        <input type="number" id="numMargen" min="0" max="200" step="2" value="36"> <span>pt</span>
+      </div>
+
+      <label for="numFuente">Tipografía</label>
+      <div class="fila-compacta">
+        <select id="numFuente">
+          <option value="Helvetica">Helvetica / Arial</option>
+          <option value="Times">Times / Serif</option>
+          <option value="Courier">Courier / Mono</option>
+        </select>
+        <input type="number" id="numTam" min="5" max="72" step="1" value="10" title="Tamaño">
+        <input type="color" id="numColor" value="#333333" title="Color">
+      </div>
+
+      <label for="numDesde">Páginas</label>
+      <div class="fila-compacta">
+        <span>de</span> <input type="number" id="numDesde" min="1" value="1">
+        <span>a</span> <input type="number" id="numHasta" min="1" value="1">
+      </div>
+
+      <label for="numEmpezar">Empezar en</label>
+      <div class="fila-compacta">
+        <input type="number" id="numEmpezar" min="0" value="1">
+      </div>
+
+      <label></label>
+      <label class="casilla"><input type="checkbox" id="numOmitir"> No numerar la primera página</label>
+    </div>
+
+    <p class="aviso-props" id="numPrevia"></p>
+
+    <div class="modal-btns">
+      <button class="btn peligro" id="btnQuitarNumeros" hidden>Quitar numeración</button>
+      <button class="btn" id="btnCancelarNumeros">Cancelar</button>
+      <button class="btn btn-primario" id="btnAplicarNumeros">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ Diálogo de firma ══════════ -->
+<div class="modal" id="modalFirma" hidden>
+  <div class="modal-caja">
+    <h2>Tu firma</h2>
+    <p class="modal-ayuda" id="avisoFirma">Traza la firma con el ratón o el dedo.</p>
+
+    <canvas id="lienzoFirma" width="720" height="260"></canvas>
+
+    <div class="firma-ops" id="filaDibujoFirma">
+      <label>Color <input type="color" id="colorFirma" value="#0b3d91"></label>
+      <label class="crece">Grosor
+        <input type="range" id="grosorFirma" min="1" max="10" step="0.5" value="3">
+      </label>
+      <button class="mini-btn" id="btnFotoFirma" title="Usar una foto o un escaneo de tu firma">
+        <span data-icono="imagen"></span> Importar foto
+      </button>
+    </div>
+
+    <div class="firma-ops" id="filaSensFirma" hidden>
+      <label class="crece">Quitar fondo
+        <input type="range" id="sensFirma" min="0" max="1" step="0.05" value="0.5">
+      </label>
+      <button class="mini-btn" id="btnFotoFirma2" title="Elegir otra foto"><span data-icono="imagen"></span> Otra foto</button>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn" id="btnLimpiarFirma">Empezar de nuevo</button>
+      <button class="btn" id="btnCancelarFirma">Cancelar</button>
+      <button class="btn btn-primario" id="btnUsarFirma">Usar esta firma</button>
+    </div>
+  </div>
+</div>
+
 <div class="capa-arrastre" id="capaArrastre" hidden><div>Suelta aquí los PDF</div></div>
 
 <input type="file" id="inpArchivos" accept="application/pdf,.pdf" multiple hidden>
+<input type="file" id="inpImagen" accept="image/png,image/jpeg" hidden>
+<input type="file" id="inpComparar" accept="application/pdf,.pdf" hidden>
+<input type="file" id="inpFotoFirma" accept="image/png,image/jpeg" hidden>
 
 <!-- ══════════ Librerías locales (funcionan sin internet) ══════════ -->
 <script src="assets/vendor/pdf-lib/pdf-lib.js"></script>
@@ -194,11 +381,17 @@
 
 <!-- ══════════ Aplicación ══════════ -->
 <script src="assets/js/util.js"></script>
+<script src="assets/js/iconos.js"></script>
+<script src="assets/js/ordenar.js"></script>
 <script src="assets/js/estado.js"></script>
 <script src="assets/js/geometria.js"></script>
 <script src="assets/js/anotaciones.js"></script>
 <script src="assets/js/documentos.js"></script>
 <script src="assets/js/render.js"></script>
+<script src="assets/js/imagenes.js"></script>
+<script src="assets/js/numeracion.js"></script>
+<script src="assets/js/comparar.js"></script>
+<script src="assets/js/comprimir.js"></script>
 <script src="assets/js/herramientas.js"></script>
 <script src="assets/js/paneles.js"></script>
 <script src="assets/js/exportar.js"></script>

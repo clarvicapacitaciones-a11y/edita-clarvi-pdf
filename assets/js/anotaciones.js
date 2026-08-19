@@ -10,8 +10,12 @@
    linea     {x1,y1,x2,y2, trazo, grosor, opacidad}
    flecha    idem + punta
    trazo     {pts:[x,y,x,y,…], trazo, grosor, opacidad, resaltador}
+   imagen    {x,y,w,h, imgId, opacidad}              (firma incluida)
    texto     {x,y,w, texto, tam, fuente, negrita, cursiva, color, alineado,
-              interlineado, fondo}
+              interlineado, fondo, giro}
+             `giro` es opcional (0/90/180/270) y gira el texto dentro de la
+             página; hace falta para que los números de página se lean
+             derechos en las páginas giradas.
 
    Todas las coordenadas están en puntos del espacio de página sin girar.
 
@@ -207,6 +211,35 @@
     });
   }
 
+  /* ── Texto girado ───────────────────────────────────────────────────────
+     El texto vive en un marco local anclado en (x, y) y girado `giro` grados
+     en sentido horario dentro del espacio de página (que tiene la «y» hacia
+     abajo). Estas dos funciones convierten entre ese marco y la página.
+     ─────────────────────────────────────────────────────────────────────── */
+
+  function giroDe(anot) { return ((((anot.giro || 0) % 360) + 360) % 360); }
+
+  /** Punto local (lx, ly) del texto → punto en el espacio de página. */
+  function aPagina(anot, lx, ly) {
+    switch (giroDe(anot)) {
+      case 90:  return { x: anot.x - ly, y: anot.y + lx };
+      case 180: return { x: anot.x - lx, y: anot.y - ly };
+      case 270: return { x: anot.x + ly, y: anot.y - lx };
+      default:  return { x: anot.x + lx, y: anot.y + ly };
+    }
+  }
+
+  /** Las cuatro esquinas del cuadro de texto, en el espacio de página. */
+  function esquinasTexto(anot) {
+    var alto = altoTexto(anot);
+    return [
+      aPagina(anot, 0, 0),
+      aPagina(anot, anot.w, 0),
+      aPagina(anot, anot.w, alto),
+      aPagina(anot, 0, alto)
+    ];
+  }
+
   /* ── Caja envolvente ────────────────────────────────────────────────── */
 
   function caja(anot) {
@@ -219,6 +252,7 @@
 
       case 'resaltado':
       case 'tapar':
+      case 'imagen':
         return { x: anot.x, y: anot.y, w: anot.w, h: anot.h };
 
       case 'linea':
@@ -245,8 +279,18 @@
         return { x: minX - m, y: minY - m, w: (maxX - minX) + 2 * m, h: (maxY - minY) + 2 * m };
       }
 
-      case 'texto':
-        return { x: anot.x, y: anot.y, w: anot.w, h: altoTexto(anot) };
+      case 'texto': {
+        if (!giroDe(anot)) return { x: anot.x, y: anot.y, w: anot.w, h: altoTexto(anot) };
+        var pts = esquinasTexto(anot);
+        var xs = pts.map(function (p) { return p.x; });
+        var ys = pts.map(function (p) { return p.y; });
+        var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys);
+        return {
+          x: x0, y: y0,
+          w: Math.max.apply(null, xs) - x0,
+          h: Math.max.apply(null, ys) - y0
+        };
+      }
     }
     return { x: 0, y: 0, w: 0, h: 0 };
   }
@@ -260,6 +304,7 @@
       case 'resaltado':
       case 'tapar':
       case 'texto':
+      case 'imagen':
         return geo.enRect(x, y, caja(anot), t);
 
       case 'rect': {
@@ -335,6 +380,12 @@
     }
 
     if (anot.tipo === 'texto') {
+      if (giroDe(anot)) {
+        // Girado: sólo se desplaza; deformar el marco no tendría sentido.
+        anot.x += nuevo.x - viejo.x;
+        anot.y += nuevo.y - viejo.y;
+        return;
+      }
       // El texto sólo cambia de ancho: el alto lo marca el propio contenido.
       anot.x = nuevo.x; anot.y = nuevo.y;
       anot.w = Math.max(20, nuevo.w);
@@ -429,12 +480,34 @@
         break;
       }
 
+      case 'imagen': {
+        var bm = Clarvi.imagenes && Clarvi.imagenes.bitmap(anot.imgId);
+        if (bm) {
+          ctx.drawImage(bm, anot.x, anot.y, anot.w, anot.h);
+        } else {
+          // La imagen todavía no está lista: se marca el hueco.
+          ctx.strokeStyle = '#9aa5bd';
+          ctx.setLineDash([3, 3]);
+          ctx.lineWidth = 0.7;
+          ctx.strokeRect(anot.x, anot.y, anot.w, anot.h);
+          ctx.setLineDash([]);
+        }
+        break;
+      }
+
       case 'texto':
         dibujarTexto(ctx, anot);
         break;
     }
 
     ctx.restore();
+  }
+
+  /** Desplazamiento horizontal de una línea según la alineación. */
+  function desplazamientoH(anot, anchoLinea) {
+    if (anot.alineado === 'centro') return (anot.w - anchoLinea) / 2;
+    if (anot.alineado === 'der') return anot.w - anchoLinea;
+    return 0;
   }
 
   /** Los tres vértices de la punta de una flecha. */
@@ -452,10 +525,15 @@
   function dibujarTexto(ctx, anot) {
     var ls = lineas(anot);
     var alto = ls.length * anot.tam * anot.interlineado;
+    var giro = giroDe(anot);
+
+    // Se trabaja en el marco local del texto: así el giro sale gratis.
+    ctx.translate(anot.x, anot.y);
+    if (giro) ctx.rotate(giro * Math.PI / 180);
 
     if (anot.fondo) {
       ctx.fillStyle = anot.fondo;
-      ctx.fillRect(anot.x, anot.y, anot.w, alto);
+      ctx.fillRect(0, 0, anot.w, alto);
     }
 
     ctx.fillStyle = anot.color || '#000000';
@@ -471,11 +549,8 @@
       if (!linea) continue;
 
       var anchoPdf = anchoTexto(linea, anot);
-      var x = anot.x;
-      if (anot.alineado === 'centro') x = anot.x + (anot.w - anchoPdf) / 2;
-      else if (anot.alineado === 'der') x = anot.x + (anot.w - anchoPdf);
-
-      var y = anot.y + desplazamiento + i * anot.tam * anot.interlineado + base;
+      var x = desplazamientoH(anot, anchoPdf);
+      var y = desplazamiento + i * anot.tam * anot.interlineado + base;
 
       // Se estira la línea para que ocupe justo lo que ocupará en el PDF.
       var anchoCanvas = ctx.measureText(linea).width;
@@ -511,6 +586,10 @@
     redimensionable: redimensionable,
     ajustarACaja: ajustarACaja,
     dibujar: dibujar,
-    puntaFlecha: puntaFlecha
+    puntaFlecha: puntaFlecha,
+    giroDe: giroDe,
+    aPaginaLocal: aPagina,
+    esquinasTexto: esquinasTexto,
+    desplazamientoH: desplazamientoH
   };
 })(window);

@@ -16,6 +16,7 @@
   var PALETA_RESALTAR = ['#ffe14d', '#a8f0a0', '#9fd8ff', '#ffb3d1', '#ffc48a', '#d6c2ff'];
 
   var cuerpoProps, tituloProps, listaMin, accionesPag, contSel;
+  var listaDocs, cabDocs;
   var minPorId = new Map();
 
   /* ════════════════════ Panel de propiedades ════════════════════ */
@@ -129,7 +130,8 @@
 
     var NOMBRES = {
       texto: 'Texto', rect: 'Rectángulo', elipse: 'Elipse', linea: 'Línea',
-      flecha: 'Flecha', trazo: 'Trazo a mano', resaltado: 'Resaltado', tapar: 'Tapado'
+      flecha: 'Flecha', trazo: 'Trazo a mano', resaltado: 'Resaltado',
+      tapar: 'Tapado', imagen: 'Imagen'
     };
     tituloProps.textContent = NOMBRES[anot.tipo] || 'Objeto';
 
@@ -208,6 +210,32 @@
       gt.appendChild(paleta(['#ffffff', '#000000', '#f4f4f4', '#eeeae0', '#111111'],
         anot.relleno, function (v) { anot.relleno = aj.colorTapar = v; tocarAnot(anot); refrescar(); }));
       c.appendChild(gt);
+    }
+
+    /* Imagen */
+    if (anot.tipo === 'imagen') {
+      var gi = grupo('Archivo');
+      var fi = Clarvi.imagenes.ficha(anot.imgId);
+      if (fi) {
+        var info = util.crear('div', 'aviso-props');
+        info.innerHTML = '<b>' + fi.nombre + '</b><br>' + fi.ancho + ' × ' + fi.alto +
+                         ' px · ' + util.tamanoLegible(fi.bytes.length);
+        gi.appendChild(info);
+      }
+      gi.appendChild(filaRango('Opacidad', anot.opacidad, 0.05, 1, 0.05,
+        function (v) { anot.opacidad = aj.opacidadImagen = v; tocarAnot(anot); },
+        function (v) { return Math.round(v * 100) + '%'; }));
+      gi.appendChild(boton('Recuperar proporción', function () {
+        var f = Clarvi.imagenes.ficha(anot.imgId);
+        if (!f) return;
+        anot.h = anot.w * (f.alto / Math.max(1, f.ancho));
+        tocarAnot(anot);
+      }));
+      c.appendChild(gi);
+      var nota = util.crear('div', 'aviso-props');
+      nota.innerHTML = 'Al arrastrar una esquina se conserva la proporción. ' +
+                       'Con <b>Shift</b> la deformas a voluntad.';
+      c.appendChild(nota);
     }
 
     /* Formas y trazos */
@@ -291,7 +319,7 @@
       seleccionar: 'Mover', texto: 'Texto nuevo', editar: 'Editar texto del PDF',
       resaltar: 'Resaltar', lapiz: 'Lápiz', linea: 'Línea', flecha: 'Flecha',
       rect: 'Rectángulo', elipse: 'Elipse', tapar: 'Tapar', borrar: 'Borrador',
-      seltexto: 'Copiar texto'
+      seltexto: 'Copiar texto', imagen: 'Insertar imagen', firma: 'Firma'
     };
     tituloProps.textContent = NOMBRES[h] || 'Propiedades';
 
@@ -318,6 +346,38 @@
         av2.innerHTML = AYUDA_HERR.editar;
         c.appendChild(av2);
       }
+    }
+
+    if (h === 'imagen' || h === 'firma') {
+      var gim = grupo(h === 'firma' ? 'Firma' : 'Imagen');
+      var lista = estado.pendiente;
+      var esFirma = h === 'firma';
+      var correcta = lista && (esFirma ? lista.esFirma === true : lista.esFirma !== true);
+
+      var av = util.crear('div', 'aviso-props');
+      av.innerHTML = correcta
+        ? 'Lista para colocar. <b>Clic</b> en la página para el tamaño natural, ' +
+          'o <b>arrastra</b> para encajarla. Puedes estamparla en varias páginas seguidas.'
+        : (esFirma
+            ? 'Dibuja tu firma o importa una foto: se le quitará el fondo del papel.'
+            : 'Elige un archivo PNG o JPG de tu equipo.');
+      gim.appendChild(av);
+
+      gim.appendChild(boton(esFirma ? 'Dibujar o cambiar la firma…' : 'Elegir imagen…',
+        function () { estado.emitir('pedirImagen', h); }));
+
+      if (esFirma && Clarvi.imagenes.firmaGuardada()) {
+        gim.appendChild(boton('Olvidar la firma guardada', function () {
+          Clarvi.imagenes.olvidarFirma();
+          estado.pendiente = null;
+          refrescar();
+        }, 'peligro'));
+      }
+
+      gim.appendChild(filaRango('Opacidad', aj.opacidadImagen, 0.05, 1, 0.05,
+        function (v) { aj.opacidadImagen = v; },
+        function (v) { return Math.round(v * 100) + '%'; }));
+      c.appendChild(gim);
     }
 
     if (h === 'resaltar') {
@@ -371,59 +431,85 @@
 
   /* ════════════════════ Panel de páginas ════════════════════ */
 
+  /* Interacción, tal y como la pidió el usuario:
+       · clic en la miniatura   → va a esa página, sin marcarla
+       · clic en el recuadro    → la marca o la desmarca, acumulando sin teclas
+       · Shift en el recuadro   → marca el rango desde la última marcada
+       · arrastrar la miniatura → la reordena
+     El arrastre y el clic conviven porque ordenar.js decide según cuánto se
+     haya movido el puntero. */
+
+  var ultimaMarcada = null;
+  var arrastrandoMin = false;
+
   function crearMiniatura(pag) {
     var el = util.crear('div', 'min');
     el.dataset.pag = pag.id;
-    el.draggable = true;
+    el.dataset.id = pag.id;
 
     var canvas = document.createElement('canvas');
     canvas.width = 180; canvas.height = 240;
     el.appendChild(canvas);
-    el.appendChild(util.crear('span', 'min-marca', '✓'));
+
+    var marca = util.crear('span', 'min-marca', '✓');
+    marca.title = 'Marcar esta página';
+    el.appendChild(marca);
     el.appendChild(util.crear('span', 'min-etiq'));
     el.appendChild(util.crear('span', 'min-num'));
 
-    el.addEventListener('click', function (ev) {
-      if (ev.ctrlKey || ev.metaKey || ev.shiftKey) {
-        if (estado.paginasSel.has(pag.id)) estado.paginasSel.delete(pag.id);
-        else estado.paginasSel.add(pag.id);
-      } else if (estado.paginasSel.size === 1 && estado.paginasSel.has(pag.id)) {
-        estado.paginasSel.clear();
-      } else {
-        estado.paginasSel.clear();
-        estado.paginasSel.add(pag.id);
-      }
-      irAPagina(estado.indiceDe(pag.id), true);
-      actualizarMiniaturas();
-      estado.emitir('seleccionPaginas');
-    });
-
-    el.addEventListener('dragstart', function (ev) {
-      ev.dataTransfer.effectAllowed = 'move';
-      ev.dataTransfer.setData('text/plain', pag.id);
-      el.classList.add('arrastrando');
-    });
-    el.addEventListener('dragend', function () {
-      el.classList.remove('arrastrando');
-      util.$$('.min.destino', listaMin).forEach(function (m) { m.classList.remove('destino'); });
-    });
-    el.addEventListener('dragover', function (ev) {
-      ev.preventDefault();
-      ev.dataTransfer.dropEffect = 'move';
-      util.$$('.min.destino', listaMin).forEach(function (m) { m.classList.remove('destino'); });
-      el.classList.add('destino');
-    });
-    el.addEventListener('dragleave', function () { el.classList.remove('destino'); });
-    el.addEventListener('drop', function (ev) {
-      ev.preventDefault();
-      el.classList.remove('destino');
-      var origen = ev.dataTransfer.getData('text/plain');
-      if (!origen || origen === pag.id) return;
-      Clarvi.docs.reordenar(origen, estado.indiceDe(pag.id));
+    marca.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });
+    marca.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      alternarMarca(pag.id, ev.shiftKey);
     });
 
     minPorId.set(pag.id, el);
     return el;
+  }
+
+  function alternarMarca(id, conRango) {
+    if (conRango && ultimaMarcada && ultimaMarcada !== id) {
+      var a = estado.indiceDe(ultimaMarcada), b = estado.indiceDe(id);
+      if (a >= 0 && b >= 0) {
+        var desde = Math.min(a, b), hasta = Math.max(a, b);
+        for (var i = desde; i <= hasta; i++) estado.paginasSel.add(estado.paginas[i].id);
+      }
+    } else if (estado.paginasSel.has(id)) {
+      estado.paginasSel.delete(id);
+    } else {
+      estado.paginasSel.add(id);
+    }
+    ultimaMarcada = id;
+    actualizarMiniaturas();
+    estado.emitir('seleccionPaginas');
+  }
+
+  function activarArrastreMiniaturas() {
+    Clarvi.ordenar.activar({
+      contenedor: listaMin,
+      selector: '.min',
+      ignorar: '.min-marca',
+      alClic: function (id) {
+        var i = estado.indiceDe(id);
+        if (i >= 0) irAPagina(i, true);
+      },
+      alSoltar: function (idOrigen, idDestino, antes) {
+        var destino = estado.indiceDe(idDestino);
+        if (destino < 0) return;
+        Clarvi.docs.reordenar(idOrigen, antes ? destino : destino + 1);
+      }
+    });
+
+    // Mientras el usuario toca la lista no se le mueve bajo los dedos.
+    listaMin.addEventListener('pointerdown', function () { arrastrandoMin = true; });
+    raiz.addEventListener('pointerup', function () {
+      setTimeout(function () { arrastrandoMin = false; }, 250);
+    });
+    listaMin.addEventListener('scroll', function () {
+      arrastrandoMin = true;
+      clearTimeout(activarArrastreMiniaturas._t);
+      activarArrastreMiniaturas._t = setTimeout(function () { arrastrandoMin = false; }, 900);
+    });
   }
 
   function actualizarMiniaturas() {
@@ -462,6 +548,106 @@
     var n = estado.paginasSel.size;
     accionesPag.hidden = n === 0;
     contSel.textContent = n === 1 ? '1 página' : n + ' páginas';
+
+    actualizarDocumentos();
+  }
+
+  /** Deja a la vista la miniatura de la página que se está mirando. */
+  function seguirPaginaActual() {
+    if (arrastrandoMin) return;
+    var pag = estado.paginas[estado.paginaActual];
+    if (!pag) return;
+    var el = minPorId.get(pag.id);
+    if (!el) return;
+
+    var arriba = el.offsetTop;
+    var abajo = arriba + el.offsetHeight;
+    var visibleArriba = listaMin.scrollTop;
+    var visibleAbajo = visibleArriba + listaMin.clientHeight;
+
+    // Si ya se ve entera, no se toca nada: mover la lista sin motivo molesta.
+    if (arriba >= visibleArriba && abajo <= visibleAbajo) return;
+
+    listaMin.scrollTop = (arriba < visibleArriba)
+      ? arriba - 10
+      : abajo - listaMin.clientHeight + 10;
+  }
+
+  /* ════════════════════ Documentos abiertos ════════════════════ */
+
+  function actualizarDocumentos() {
+    if (!listaDocs) return;
+
+    var docs = Clarvi.docs.documentosEnOrden();
+    listaDocs.hidden = docs.length === 0;
+    cabDocs.hidden = docs.length === 0;
+    util.$('.pista', cabDocs).style.display = docs.length > 1 ? '' : 'none';
+
+    util.vaciar(listaDocs);
+
+    docs.forEach(function (d) {
+      var fila = util.crear('div', 'doc');
+      fila.dataset.id = d.fuenteId;
+      if (estado.paginas[estado.paginaActual] &&
+          estado.paginas[estado.paginaActual].fuenteId === d.fuenteId) {
+        fila.classList.add('actual');
+      }
+
+      var ico = util.crear('span');
+      ico.setAttribute('data-icono', 'documento');
+      Clarvi.iconos.pon(ico, 'documento');
+      fila.appendChild(ico);
+
+      var nombre = util.crear('span', 'doc-nombre', d.fuente ? d.fuente.nombre : 'documento');
+      nombre.title = (d.fuente ? d.fuente.nombre : '') + ' — ' + d.paginas + ' página(s)';
+      fila.appendChild(nombre);
+
+      if (!d.contiguo) {
+        var mez = util.crear('span', 'doc-mezcla', 'mezclado');
+        mez.title = 'Sus páginas están repartidas entre las de otro archivo. ' +
+                    'Si mueves este documento, volverán a quedar juntas.';
+        fila.appendChild(mez);
+      }
+
+      fila.appendChild(util.crear('span', 'doc-pags', d.paginas + ' pág.'));
+
+      var quitar = util.crear('button', 'doc-quitar');
+      quitar.setAttribute('data-icono', 'quitar');
+      Clarvi.iconos.pon(quitar, 'quitar');
+      quitar.title = 'Quitar este documento y todas sus páginas';
+      quitar.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });
+      quitar.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        if (docs.length < 2) {
+          estado.emitir('aviso', {
+            tipo: 'error',
+            texto: 'Es el único documento abierto: quitarlo dejaría la ventana vacía.'
+          });
+          return;
+        }
+        if (!raiz.confirm('¿Quitar «' + (d.fuente ? d.fuente.nombre : 'este documento') +
+                          '» y sus ' + d.paginas + ' página(s)?')) return;
+        Clarvi.docs.eliminarDocumento(d.fuenteId);
+      });
+      fila.appendChild(quitar);
+
+      listaDocs.appendChild(fila);
+    });
+  }
+
+  function activarArrastreDocumentos() {
+    Clarvi.ordenar.activar({
+      contenedor: listaDocs,
+      selector: '.doc',
+      ignorar: '.doc-quitar',
+      alClic: function (id) {
+        var primera = Clarvi.docs.paginasDeFuente(id)[0];
+        if (primera) irAPagina(estado.indiceDe(primera.id), true);
+      },
+      alSoltar: function (idOrigen, idDestino, antes) {
+        Clarvi.docs.reordenarDocumento(idOrigen, idDestino, antes);
+      }
+    });
   }
 
   /* ════════════════════ Navegación y zoom ════════════════════ */
@@ -477,6 +663,7 @@
     }
     actualizarBarraInferior();
     actualizarMiniaturas();
+    seguirPaginaActual();
   }
 
   function actualizarBarraInferior() {
@@ -501,6 +688,7 @@
       estado.paginaActual = mejor;
       actualizarBarraInferior();
       actualizarMiniaturas();
+      seguirPaginaActual();
     }
   }
 
@@ -512,6 +700,11 @@
     listaMin = util.$('#listaMin');
     accionesPag = util.$('#accionesPag');
     contSel = util.$('#contSel');
+    listaDocs = util.$('#listaDocs');
+    cabDocs = util.$('#cabDocs');
+
+    activarArrastreMiniaturas();
+    activarArrastreDocumentos();
 
     estado.al('seleccion', refrescar);
     estado.al('herramienta', refrescar);
@@ -530,6 +723,9 @@
     actualizarMiniaturas: actualizarMiniaturas,
     actualizarBarraInferior: actualizarBarraInferior,
     detectarPaginaVisible: detectarPaginaVisible,
+    seguirPaginaActual: seguirPaginaActual,
+    actualizarDocumentos: actualizarDocumentos,
+    alternarMarca: alternarMarca,
     irAPagina: irAPagina
   };
 })(window);

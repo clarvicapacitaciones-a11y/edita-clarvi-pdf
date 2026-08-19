@@ -25,6 +25,12 @@
     };
     if (ent.cMapUrl) { o.cMapUrl = ent.cMapUrl; o.cMapPacked = true; }
     if (ent.fuentesUrl) { o.standardFontDataUrl = ent.fuentesUrl; }
+
+    // Con doble clic (file://) el navegador no deja descargar nada, así que los
+    // datos llegan por otra vía. Sin esto, los PDF cuyas fuentes no van
+    // incrustadas salen con el texto ilegible.
+    if (ent.fabricaFuentes) o.StandardFontDataFactory = ent.fabricaFuentes;
+    if (ent.fabricaCMaps) { o.CMapReaderFactory = ent.fabricaCMaps; o.cMapPacked = true; }
     if (contrasena) o.password = contrasena;
     return o;
   }
@@ -200,6 +206,76 @@
     estado.emitir('documento');
   }
 
+  /* ── Operaciones por documento de origen ────────────────────────────── */
+
+  /** Páginas que vienen de un archivo, en el orden en que están ahora. */
+  function paginasDeFuente(fuenteId) {
+    return estado.paginas.filter(function (p) { return p.fuenteId === fuenteId; });
+  }
+
+  /**
+   * Los archivos abiertos, ordenados por dónde aparece su primera página.
+   * `contiguo` avisa de si sus páginas siguen juntas o el usuario ya las ha
+   * entremezclado con las de otro archivo: en ese segundo caso, moverlo las
+   * volverá a agrupar, y conviene que se sepa de antemano.
+   */
+  function documentosEnOrden() {
+    var vistos = [];
+    var porId = new Map();
+
+    estado.paginas.forEach(function (p, i) {
+      var d = porId.get(p.fuenteId);
+      if (!d) {
+        d = { fuenteId: p.fuenteId, fuente: estado.fuentes.get(p.fuenteId),
+              primera: i, ultima: i, paginas: 0 };
+        porId.set(p.fuenteId, d);
+        vistos.push(d);
+      }
+      d.ultima = i;
+      d.paginas++;
+    });
+
+    vistos.forEach(function (d) {
+      d.contiguo = (d.ultima - d.primera + 1) === d.paginas;
+    });
+    return vistos;
+  }
+
+  /**
+   * Mueve TODAS las páginas de un archivo, en bloque y conservando su orden
+   * relativo, hasta donde está otro archivo.
+   */
+  function reordenarDocumento(fuenteId, fuenteDestino, antes) {
+    if (fuenteId === fuenteDestino) return false;
+
+    var bloque = paginasDeFuente(fuenteId);
+    if (!bloque.length) return false;
+
+    var resto = estado.paginas.filter(function (p) { return p.fuenteId !== fuenteId; });
+
+    // Se busca dónde empieza (o acaba) el archivo de destino dentro del resto.
+    var destino = resto.length;
+    for (var i = 0; i < resto.length; i++) {
+      if (resto[i].fuenteId === fuenteDestino) {
+        if (antes) { destino = i; break; }
+        destino = i + 1;               // sigue avanzando hasta su última página
+      }
+    }
+
+    estado.paginas = resto.slice(0, destino).concat(bloque, resto.slice(destino));
+    estado.marcar('ordenar documentos');
+    estado.emitir('documento');
+    return true;
+  }
+
+  /** Quita del documento todas las páginas que venían de un archivo. */
+  function eliminarDocumento(fuenteId) {
+    var ids = paginasDeFuente(fuenteId).map(function (p) { return p.id; });
+    if (!ids.length) return false;
+    if (ids.length >= estado.paginas.length) return false;   // no dejarlo vacío
+    return eliminar(ids);
+  }
+
   /** Nombre sugerido para el archivo de salida. */
   function nombreSalida(sufijo) {
     var primera = estado.paginas[0];
@@ -214,6 +290,9 @@
   }
 
   Clarvi.docs = {
+    /** Abre un PDF con pdf.js sin registrarlo como parte del documento.
+        Lo usa la comparación, que sólo necesita leer el otro archivo. */
+    abrirSuelto: abrirConPdfjs,
     cargarPdf: cargarPdf,
     paginasDe: paginasDe,
     abrirArchivos: abrirArchivos,
@@ -221,6 +300,10 @@
     duplicar: duplicar,
     eliminar: eliminar,
     reordenar: reordenar,
+    paginasDeFuente: paginasDeFuente,
+    documentosEnOrden: documentosEnOrden,
+    reordenarDocumento: reordenarDocumento,
+    eliminarDocumento: eliminarDocumento,
     normalizarGiro: normalizarGiro,
     nombreSalida: nombreSalida
   };

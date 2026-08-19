@@ -155,6 +155,17 @@
       return;
     }
 
+    /* — Imagen o firma: hace falta haber elegido una antes — */
+    if (herr === 'imagen' || herr === 'firma') {
+      if (!estado.pendiente) {
+        estado.emitir('pedirImagen', herr);
+        return;
+      }
+      arrastre = { tipo: 'crear', paginaId: pag.id, inicio: p, actual: p, herr: herr };
+      actualizarPrevia(ev.shiftKey);
+      return;
+    }
+
     /* — Dibujo libre — */
     if (herr === 'lapiz') {
       var a = ajustesTrazo();
@@ -195,11 +206,16 @@
 
       case 'redim': {
         var d = { x: p.x - arrastre.inicio.x, y: p.y - arrastre.inicio.y };
-        var nuevo = geo.redimensionar(arrastre.cajaInicial, arrastre.tirador, d.x, d.y, 6);
-        if (ev.shiftKey && arrastre.cajaInicial.h > 0) {
-          var razon = arrastre.cajaInicial.w / arrastre.cajaInicial.h;
-          nuevo.h = nuevo.w / razon;
-        }
+
+        // En las imágenes la proporción se conserva sola (con Shift se libera);
+        // en el resto de objetos se conserva sólo si se pulsa Shift.
+        var esImagen = arrastre.anot.tipo === 'imagen';
+        var proporcional = geo.esEsquina(arrastre.tirador) &&
+                           (esImagen ? !ev.shiftKey : ev.shiftKey);
+
+        var nuevo = proporcional
+          ? geo.redimensionarProporcional(arrastre.cajaInicial, arrastre.tirador, d.x, d.y, 6)
+          : geo.redimensionar(arrastre.cajaInicial, arrastre.tirador, d.x, d.y, 6);
         var copia = util.clonar(arrastre.copia);
         anots.ajustarACaja(copia, nuevo);
         for (var k in copia) if (Object.prototype.hasOwnProperty.call(copia, k)) arrastre.anot[k] = copia[k];
@@ -356,7 +372,42 @@
           trazo: '#4f8ef7', relleno: '', grosor: 0.6, opacidad: 0.9
         });
         break;
+
+      case 'imagen':
+      case 'firma': {
+        var caja = cajaParaImagen(estado.pendiente, r,
+                                  estado.pagina(arrastre.paginaId), arrastre.inicio);
+        if (!caja) break;
+        arrastre.previa = anots.nueva('imagen', {
+          x: caja.x, y: caja.y, w: caja.w, h: caja.h,
+          imgId: estado.pendiente.id,
+          opacidad: aj.opacidadImagen
+        });
+        break;
+      }
     }
+  }
+
+  /**
+   * Calcula dónde y de qué tamaño cae una imagen.
+   * Si el arrastre es mínimo se usa un tamaño natural razonable centrado en el
+   * punto; si hay arrastre, la imagen se encaja dentro sin deformarse.
+   */
+  function cajaParaImagen(ficha, r, pag, centro) {
+    if (!ficha || !pag) return null;
+    var razon = ficha.ancho / Math.max(1, ficha.alto);
+
+    if (r.w < 8 || r.h < 8) {
+      // 0.75 pt por píxel equivale a los 96 ppp habituales de pantalla.
+      var ancho = util.limitar(ficha.ancho * 0.75, 40, pag.ancho * 0.45);
+      var alto = ancho / razon;
+      if (alto > pag.alto * 0.45) { alto = pag.alto * 0.45; ancho = alto * razon; }
+      return { x: centro.x - ancho / 2, y: centro.y - alto / 2, w: ancho, h: alto };
+    }
+
+    var w = r.w, h = r.w / razon;
+    if (h > r.h) { h = r.h; w = r.h * razon; }
+    return { x: r.x + (r.w - w) / 2, y: r.y + (r.h - h) / 2, w: w, h: h };
   }
 
   function terminarCreacion(pag, gesto, shift) {
@@ -373,6 +424,17 @@
       seleccionar(pag.id, anot.id);
       estado.emitir('pagina', pag.id);
       abrirEditor(pag, anot, true);
+      return;
+    }
+
+    if (gesto.herr === 'imagen' || gesto.herr === 'firma') {
+      var caja = cajaParaImagen(estado.pendiente, r, pag, gesto.inicio);
+      if (!caja) return;
+      anadir(pag, anots.nueva('imagen', {
+        x: caja.x, y: caja.y, w: caja.w, h: caja.h,
+        imgId: estado.pendiente.id,
+        opacidad: aj.opacidadImagen
+      }));
       return;
     }
 

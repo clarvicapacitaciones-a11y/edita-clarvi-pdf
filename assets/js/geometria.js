@@ -141,6 +141,37 @@
       return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
     },
 
+    /**
+     * Como redimensionar(), pero conservando la proporción original.
+     * Se ancla la esquina opuesta a la que se está arrastrando.
+     */
+    redimensionarProporcional: function (r, tirador, dx, dy, minimo) {
+      var min = minimo == null ? 6 : minimo;
+      if (r.w <= 0 || r.h <= 0) return geo.redimensionar(r, tirador, dx, dy, min);
+
+      var razon = r.w / r.h;
+      var libre = geo.redimensionar(r, tirador, dx, dy, min);
+
+      var w = libre.w, h = libre.h;
+      if (w / razon >= h) h = w / razon; else w = h * razon;
+      w = Math.max(min, w);
+      h = Math.max(min, h);
+
+      var izquierda = tirador.indexOf('o') >= 0;
+      var arriba = tirador.indexOf('n') >= 0;
+      var anclaX = izquierda ? r.x + r.w : r.x;
+      var anclaY = arriba ? r.y + r.h : r.y;
+
+      return {
+        x: izquierda ? anclaX - w : anclaX,
+        y: arriba ? anclaY - h : anclaY,
+        w: w, h: h
+      };
+    },
+
+    /** ¿El tirador es una esquina (y no el centro de un lado)? */
+    esEsquina: function (tirador) { return !!tirador && tirador.length === 2; },
+
     /** Cursor CSS del tirador, teniendo en cuenta el giro de la página. */
     cursorTirador: function (nombre, giro) {
       var orden = ['n', 'ne', 'e', 'se', 's', 'so', 'o', 'no'];

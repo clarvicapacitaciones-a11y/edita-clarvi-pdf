@@ -38,6 +38,28 @@
     });
   }
 
+  /* ── Imágenes del documento de salida ───────────────────────────────── */
+
+  function creadorImagenes(salida) {
+    var cache = {};
+    return function (imgId) {
+      if (cache[imgId]) return cache[imgId];
+
+      var ficha = estado.imagenes.get(imgId);
+      if (!ficha) return Promise.resolve(null);
+
+      // Se manda una copia: pdf-lib podría quedarse con el búfer y la imagen
+      // tiene que seguir sirviendo si se vuelve a guardar.
+      var copia = ficha.bytes.slice(0);
+      var tarea = (ficha.tipo === 'image/png')
+        ? salida.embedPng(copia)
+        : salida.embedJpg(copia);
+
+      cache[imgId] = tarea.catch(function () { return null; });
+      return cache[imgId];
+    };
+  }
+
   /* ── Fuentes tipográficas del documento de salida ───────────────────── */
 
   function creadorFuentes(salida) {
@@ -52,7 +74,7 @@
 
   /* ── Volcado de un objeto a la página de salida ─────────────────────── */
 
-  function pintar(pagPdf, pag, anot, obtenerFuente) {
+  function pintar(pagPdf, pag, anot, obtenerFuente, obtenerImagen) {
     var x0 = pag.vista[0], y1 = pag.vista[3];
     var X = function (x) { return x0 + x; };
     var Y = function (y) { return y1 - y; };
@@ -147,6 +169,16 @@
         return Promise.resolve();
       }
 
+      case 'imagen':
+        return obtenerImagen(anot.imgId).then(function (img) {
+          if (!img) return;
+          pagPdf.drawImage(img, {
+            x: X(anot.x), y: Y(anot.y + anot.h),
+            width: anot.w, height: anot.h,
+            opacity: op
+          });
+        });
+
       case 'texto':
         return obtenerFuente(anot).then(function (fuente) {
           var ls = anots.lineas(anot);
@@ -154,13 +186,18 @@
           var salto = anot.tam * anot.interlineado;
           var desplazamiento = (salto - anot.tam) / 2;
 
+          // El espacio de página tiene la «y» hacia abajo y el PDF hacia
+          // arriba, así que el giro se invierte al pasar de uno a otro.
+          var rotacion = PDFLib.degrees(-anots.giroDe(anot));
+
           if (anot.fondo) {
-            var alto = ls.length * salto;
-            pagPdf.drawRectangle({
-              x: X(anot.x), y: Y(anot.y + alto),
-              width: anot.w, height: alto,
-              color: color(anot.fondo)
-            });
+            var esq = anots.esquinasTexto(anot);
+            pagPdf.drawSvgPath(
+              'M ' + esq.map(function (p) {
+                return util.redondear(p.x, 2) + ' ' + util.redondear(p.y, 2);
+              }).join(' L ') + ' Z',
+              { x: x0, y: y1, color: color(anot.fondo) }
+            );
           }
 
           for (var i = 0; i < ls.length; i++) {
@@ -168,26 +205,27 @@
             if (!linea) continue;
 
             var ancho = anots.anchoTexto(linea, anot);
-            var x = anot.x;
-            if (anot.alineado === 'centro') x = anot.x + (anot.w - ancho) / 2;
-            else if (anot.alineado === 'der') x = anot.x + (anot.w - ancho);
+            var punto = anots.aPaginaLocal(
+              anot,
+              anots.desplazamientoH(anot, ancho),
+              desplazamiento + i * salto + ascenso
+            );
 
-            var base = anot.y + desplazamiento + i * salto + ascenso;
+            var opciones = {
+              x: X(punto.x), y: Y(punto.y),
+              size: anot.tam,
+              font: fuente,
+              color: color(anot.color || '#000000'),
+              opacity: op,
+              rotate: rotacion
+            };
 
             try {
-              pagPdf.drawText(linea, {
-                x: X(x), y: Y(base),
-                size: anot.tam,
-                font: fuente,
-                color: color(anot.color || '#000000'),
-                opacity: op
-              });
+              pagPdf.drawText(linea, opciones);
             } catch (e) {
               // Último recurso si algún carácter no se puede codificar.
-              pagPdf.drawText(anots.sanear(linea).texto.replace(/[^\x20-\x7e]/g, '?'), {
-                x: X(x), y: Y(base), size: anot.tam, font: fuente,
-                color: color(anot.color || '#000000'), opacity: op
-              });
+              opciones.font = fuente;
+              pagPdf.drawText(anots.sanear(linea).texto.replace(/[^\x20-\x7e]/g, '?'), opciones);
             }
           }
         });
@@ -247,6 +285,7 @@
 
     }).then(function (mapa) {
       var obtenerFuente = creadorFuentes(salida);
+      var obtenerImagen = creadorImagenes(salida);
       var cadena = Promise.resolve();
 
       paginas.forEach(function (pag) {
@@ -259,7 +298,7 @@
 
         pag.anots.forEach(function (anot) {
           cadena = cadena.then(function () {
-            return pintar(pagPdf, pag, anot, obtenerFuente);
+            return pintar(pagPdf, pag, anot, obtenerFuente, obtenerImagen);
           });
         });
       });

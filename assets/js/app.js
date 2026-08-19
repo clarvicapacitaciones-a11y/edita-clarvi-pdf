@@ -13,7 +13,7 @@
   var docs = Clarvi.docs;
   var exportar = Clarvi.exportar;
 
-  var barraEstado, lienzo, inpArchivos;
+  var barraEstado, lienzo, inpArchivos, inpImagen, inpComparar;
   var modoAnadir = false;
   var ocupado = false;
 
@@ -47,6 +47,9 @@
   function actualizarBotones() {
     var hay = estado.hayDocumento();
     util.$('#btnAgregar').disabled = !hay || ocupado;
+    util.$('#btnNumerar').disabled = !hay || ocupado;
+    util.$('#btnComparar').disabled = !hay || ocupado;
+    util.$('#btnComprimir').disabled = !hay || ocupado;
     util.$('#btnGuardar').disabled = !hay || ocupado;
     util.$('#btnExtraer').disabled = !hay || ocupado || estado.paginasSel.size === 0;
     util.$('#btnDeshacer').disabled = !estado.puedeDeshacer();
@@ -73,6 +76,7 @@
     if (nombre !== 'seleccionar') herr.seleccionar(null, null);
 
     if (nombre === 'seltexto' || nombre === 'editar' || nombre === 'resaltar') precargarTexto();
+    if ((nombre === 'imagen' || nombre === 'firma') && !imagenLista(nombre)) pedirImagen(nombre);
 
     estado.emitir('herramienta', nombre);
     estado.emitir('seleccion');
@@ -90,6 +94,142 @@
         render.textoDePagina(pag);
         if (estado.herramienta === 'seltexto') render.asegurarCapaTexto(pag);
       }
+    });
+  }
+
+  /* ── Orden de la barra de herramientas ──────────────────────────────────
+     El usuario puede colocar las herramientas como le venga bien arrastrando;
+     el orden se recuerda para la próxima vez. */
+
+  var CLAVE_ORDEN = 'clarvi.ordenHerramientas';
+  var ordenDefecto = [];
+
+  function herramientasEnPantalla() {
+    return util.$$('.herr[data-herr]').map(function (b) { return b.dataset.herr; });
+  }
+
+  function leerOrdenGuardado() {
+    try {
+      var crudo = raiz.localStorage.getItem(CLAVE_ORDEN);
+      var lista = crudo ? JSON.parse(crudo) : null;
+      return Array.isArray(lista) ? lista : null;
+    } catch (e) { return null; }
+  }
+
+  function guardarOrden() {
+    try { raiz.localStorage.setItem(CLAVE_ORDEN, JSON.stringify(herramientasEnPantalla())); }
+    catch (e) { /* modo privado o sin espacio: no es grave */ }
+    actualizarBotonOrden();
+  }
+
+  /** Coloca los botones según una lista, dejando al final los que no aparezcan. */
+  function aplicarOrden(lista) {
+    if (!lista) return;
+    var barra = util.$('#herramientas');
+    var porNombre = {};
+    util.$$('.herr[data-herr]').forEach(function (b) { porNombre[b.dataset.herr] = b; });
+
+    var separador = util.$('.herr-sep', barra);
+    lista.forEach(function (nombre) {
+      var b = porNombre[nombre];
+      if (b) { barra.insertBefore(b, separador); delete porNombre[nombre]; }
+    });
+    // Las que no estaban en la lista guardada (herramientas nuevas) van al final.
+    Object.keys(porNombre).forEach(function (nombre) {
+      barra.insertBefore(porNombre[nombre], separador);
+    });
+    actualizarBotonOrden();
+  }
+
+  function actualizarBotonOrden() {
+    var boton = util.$('#btnOrdenDefecto');
+    if (!boton) return;
+    boton.hidden = herramientasEnPantalla().join(',') === ordenDefecto.join(',');
+  }
+
+  function restablecerOrden() {
+    aplicarOrden(ordenDefecto);
+    try { raiz.localStorage.removeItem(CLAVE_ORDEN); } catch (e) { /* nada */ }
+    actualizarBotonOrden();
+    avisar('Herramientas de vuelta a su orden original.', 'ok');
+  }
+
+  function prepararHerramientas() {
+    ordenDefecto = herramientasEnPantalla();
+    aplicarOrden(leerOrdenGuardado());
+
+    Clarvi.ordenar.activar({
+      contenedor: util.$('#herramientas'),
+      selector: '.herr[data-herr]',
+      id: function (el) { return el.dataset.herr; },
+      alClic: function (nombre) { elegirHerramienta(nombre); },
+      alSoltar: function (origen, destino, antes) {
+        var barra = util.$('#herramientas');
+        var elOrigen = util.$('.herr[data-herr="' + origen + '"]', barra);
+        var elDestino = util.$('.herr[data-herr="' + destino + '"]', barra);
+        if (!elOrigen || !elDestino) return;
+        barra.insertBefore(elOrigen, antes ? elDestino : elDestino.nextSibling);
+        guardarOrden();
+      }
+    });
+
+    var boton = util.$('#btnOrdenDefecto');
+    if (boton) boton.addEventListener('click', restablecerOrden);
+  }
+
+  /* ── Imagen y firma ─────────────────────────────────────────────────── */
+
+  /** ¿Hay ya una imagen preparada del tipo que toca? */
+  function imagenLista(herramienta) {
+    var p = estado.pendiente;
+    if (!p) return false;
+    return herramienta === 'firma' ? p.esFirma === true : p.esFirma !== true;
+  }
+
+  /** Pide al usuario la imagen (o la firma) que se va a colocar. */
+  function pedirImagen(herramienta) {
+    if (herramienta === 'firma') {
+      Clarvi.imagenes.abrirDialogo(function (ficha) {
+        ficha.esFirma = true;
+        estado.pendiente = ficha;
+        avisar('Firma lista. Haz clic en la página donde quieras estamparla.', 'ok');
+        paneles.refrescar();
+      });
+      return;
+    }
+    inpImagen.value = '';
+    inpImagen.click();
+  }
+
+  function cargarImagen(archivo) {
+    if (!archivo) return;
+    Clarvi.imagenes.desdeArchivo(archivo).then(function (ficha) {
+      estado.pendiente = ficha;
+      avisar('Imagen lista. Haz clic en la página, o arrastra para encajarla.', 'ok');
+      paneles.refrescar();
+    }).catch(function (err) {
+      avisar('No se pudo cargar la imagen: ' + (err.message || err), 'error');
+    });
+  }
+
+  /* ── Comparar con otro PDF ──────────────────────────────────────────── */
+
+  function compararCon(archivo) {
+    ocupado = true;
+    actualizarBotones();
+    avisar('Comparando con «' + archivo.name + '»…');
+
+    Clarvi.comparar.comparar(archivo).then(function (informe) {
+      ocupado = false;
+      actualizarBotones();
+      Clarvi.comparar.mostrarInforme(informe);
+      avisar(informe.totalAnadidas || informe.totalQuitadas
+        ? 'Diferencias en ' + informe.cambiadas + ' página(s).'
+        : 'Los dos documentos tienen el mismo texto.', 'ok');
+    }).catch(function (err) {
+      ocupado = false;
+      actualizarBotones();
+      avisar('No se pudo comparar: ' + (err.message || err), 'error');
     });
   }
 
@@ -184,7 +324,8 @@
 
   var TECLAS_HERR = {
     v: 'seleccionar', t: 'texto', e: 'editar', h: 'resaltar', p: 'lapiz',
-    l: 'linea', f: 'flecha', r: 'rect', c: 'elipse', w: 'tapar', d: 'borrar'
+    l: 'linea', f: 'flecha', r: 'rect', c: 'elipse', w: 'tapar',
+    i: 'imagen', s: 'firma', d: 'borrar'
   };
 
   function escribiendo(ev) {
@@ -207,7 +348,16 @@
     if (ctrl && k === '0') { ev.preventDefault(); aplicarZoom(1); return; }
     if (ctrl) return;
 
-    if (ev.key === 'Escape') { herr.cerrarEditor(true); elegirHerramienta('seleccionar'); return; }
+    if (ev.key === 'Escape') {
+      if (!util.$('#modalComprimir').hidden) { Clarvi.comprimir.cerrar(); return; }
+      if (!util.$('#modalComparar').hidden) { Clarvi.comparar.cerrar(); return; }
+      if (!util.$('#modalNumeros').hidden) { Clarvi.numeracion.cerrar(); return; }
+      if (!util.$('#modalFirma').hidden) { Clarvi.imagenes.cerrarDialogo(); return; }
+      if (!util.$('#modalAyuda').hidden) { util.$('#modalAyuda').hidden = true; return; }
+      herr.cerrarEditor(true);
+      elegirHerramienta('seleccionar');
+      return;
+    }
     if (ev.key === 'Delete' || ev.key === 'Backspace') {
       if (herr.borrarSeleccion()) { ev.preventDefault(); paneles.refrescar(); }
       return;
@@ -268,6 +418,16 @@
     util.$('#btnAbrir').addEventListener('click', function () { pedirArchivos(false); });
     util.$('#btnAbrir2').addEventListener('click', function () { pedirArchivos(false); });
     util.$('#btnAgregar').addEventListener('click', function () { pedirArchivos(true); });
+    util.$('#btnNumerar').addEventListener('click', function () { Clarvi.numeracion.abrir(); });
+    util.$('#btnComprimir').addEventListener('click', function () { Clarvi.comprimir.abrir(); });
+    util.$('#btnComparar').addEventListener('click', function () {
+      inpComparar.value = '';
+      inpComparar.click();
+    });
+    inpComparar.addEventListener('change', function () {
+      var archivo = inpComparar.files && inpComparar.files[0];
+      if (archivo) compararCon(archivo);
+    });
     util.$('#btnGuardar').addEventListener('click', function () { guardar(false); });
     util.$('#btnExtraer').addEventListener('click', function () { guardar(true); });
 
@@ -275,12 +435,17 @@
       cargar(inpArchivos.files, modoAnadir && estado.hayDocumento());
     });
 
+    inpImagen.addEventListener('change', function () {
+      cargarImagen(inpImagen.files && inpImagen.files[0]);
+    });
+
+    estado.al('pedirImagen', pedirImagen);
+
     util.$('#btnDeshacer').addEventListener('click', function () { if (estado.deshacer()) trasHistorial(); });
     util.$('#btnRehacer').addEventListener('click', function () { if (estado.rehacer()) trasHistorial(); });
 
-    util.$$('.herr').forEach(function (b) {
-      b.addEventListener('click', function () { elegirHerramienta(b.dataset.herr); });
-    });
+    // El clic de las herramientas lo despacha ordenar.js, que distingue entre
+    // pulsar y arrastrar para reordenar.
 
     /* Panel de páginas */
     util.$('#btnSelTodo').addEventListener('click', function () {
@@ -372,6 +537,8 @@
     barraEstado = util.$('#estado');
     lienzo = util.$('#lienzo');
     inpArchivos = util.$('#inpArchivos');
+    inpImagen = util.$('#inpImagen');
+    inpComparar = util.$('#inpComparar');
     lienzo.dataset.herr = 'seleccionar';
 
     if (!raiz.pdfjsLib || !raiz.PDFLib) {
@@ -381,10 +548,20 @@
       return;
     }
 
+    Clarvi.iconos.pintarTodos();
+
     render.iniciar();
     herr.iniciar();
     paneles.iniciar();
+    prepararHerramientas();
+    Clarvi.imagenes.iniciar();
+    Clarvi.numeracion.iniciar();
+    Clarvi.comparar.iniciar();
+    Clarvi.comprimir.iniciar();
     conectar();
+
+    // Si el usuario ya firmó en otra sesión, se recupera para tenerla a mano.
+    Clarvi.imagenes.cargarFirmaGuardada();
 
     Promise.all([
       raiz.CLARVI_PDFJS_LISTO || Promise.resolve(true),

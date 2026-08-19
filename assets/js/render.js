@@ -214,91 +214,112 @@
    * Devuelve el texto de una página agrupado en renglones, con las cajas ya
    * en puntos del espacio de página sin girar (el mismo de las anotaciones).
    */
+  /**
+   * Extrae el texto de una página de pdf.js y lo agrupa en renglones, con las
+   * cajas ya en puntos del espacio de página sin girar (el mismo de las
+   * anotaciones). Funciona con cualquier documento, esté o no abierto en el
+   * editor: la comparación de PDF lo usa sobre el segundo archivo.
+   */
+  function extraerRenglones(pagPdf) {
+    var vp0 = pagPdf.getViewport({ scale: 1, rotation: 0 });
+
+    return pagPdf.getTextContent().then(function (contenido) {
+      var items = [];
+
+      contenido.items.forEach(function (item) {
+        if (!item.str || !item.str.trim()) return;
+        var tx = pdfjsLib.Util.transform(vp0.transform, item.transform);
+        var alto = Math.hypot(tx[2], tx[3]);
+        if (alto < 0.5) return;
+        // Sólo texto horizontal: el inclinado no se puede reescribir bien.
+        if (Math.abs(tx[1]) > 0.02 * Math.abs(tx[0] || 1) && Math.abs(tx[0]) < 0.02) return;
+
+        var estilo = contenido.styles[item.fontName] || {};
+        var nombreReal = '';
+        try {
+          if (pagPdf.commonObjs.has(item.fontName)) {
+            nombreReal = (pagPdf.commonObjs.get(item.fontName) || {}).name || '';
+          }
+        } catch (e) { /* la fuente aún no está cargada */ }
+
+        items.push({
+          texto: item.str,
+          x: tx[4],
+          base: tx[5],
+          ancho: item.width || 0,
+          tam: alto,
+          familia: estilo.fontFamily || 'sans-serif',
+          nombreFuente: nombreReal || estilo.fontFamily || ''
+        });
+      });
+
+      items.sort(function (a, b) { return (a.base - b.base) || (a.x - b.x); });
+
+      // Se agrupan en renglones por cercanía de línea base.
+      var renglones = [];
+      items.forEach(function (it) {
+        var ultimo = renglones[renglones.length - 1];
+        var margen = Math.max(1.5, it.tam * 0.35);
+        if (ultimo && Math.abs(ultimo.base - it.base) <= margen) {
+          ultimo.items.push(it);
+          ultimo.base = (ultimo.base * (ultimo.items.length - 1) + it.base) / ultimo.items.length;
+          ultimo.tam = Math.max(ultimo.tam, it.tam);
+        } else {
+          renglones.push({ base: it.base, tam: it.tam, items: [it] });
+        }
+      });
+
+      renglones.forEach(function (r) {
+        r.items.sort(function (a, b) { return a.x - b.x; });
+        var x0 = Infinity, x1 = -Infinity, texto = '';
+        r.items.forEach(function (it, i) {
+          x0 = Math.min(x0, it.x);
+          x1 = Math.max(x1, it.x + it.ancho);
+          if (i > 0 && hayHueco(r, i)) texto += ' ';
+          texto += it.texto;
+        });
+        r.texto = texto;
+        r.x = x0;
+        r.ancho = Math.max(1, x1 - x0);
+        r.y = r.base - r.tam * 0.86;
+        r.alto = r.tam * 1.16;
+        r.familia = r.items[0].familia;
+        r.nombreFuente = r.items[0].nombreFuente;
+      });
+
+      return { items: items, renglones: renglones };
+    });
+  }
+
+  /**
+   * ¿Hay que meter un espacio entre el trozo i-1 y el i de un renglón?
+   * Se usa igual al construir el texto del renglón y al mapear cada carácter
+   * a su posición, de modo que ambos caminos coinciden siempre.
+   */
+  function hayHueco(r, i) {
+    var prev = r.items[i - 1], it = r.items[i];
+    var hueco = it.x - (prev.x + prev.ancho);
+    return hueco > r.tam * 0.16 && !/\s$/.test(prev.texto) && !/^\s/.test(it.texto);
+  }
+
+  /** Igual que extraerRenglones, pero cacheado por página del documento abierto. */
   function textoDePagina(pag) {
     if (cacheTexto.has(pag.id)) return cacheTexto.get(pag.id);
 
     var fuente = estado.fuenteDe(pag);
     if (!fuente) return Promise.resolve({ items: [], renglones: [] });
 
-    var promesa = fuente.doc.getPage(pag.indice + 1).then(function (pagPdf) {
-      var vp0 = pagPdf.getViewport({ scale: 1, rotation: 0 });
-      return pagPdf.getTextContent().then(function (contenido) {
-        var items = [];
-
-        contenido.items.forEach(function (item) {
-          if (!item.str || !item.str.trim()) return;
-          var tx = pdfjsLib.Util.transform(vp0.transform, item.transform);
-          var alto = Math.hypot(tx[2], tx[3]);
-          if (alto < 0.5) return;
-          // Sólo texto horizontal: el inclinado no se puede reescribir bien.
-          if (Math.abs(tx[1]) > 0.02 * Math.abs(tx[0] || 1) && Math.abs(tx[0]) < 0.02) return;
-
-          var estilo = contenido.styles[item.fontName] || {};
-          var nombreReal = '';
-          try {
-            if (pagPdf.commonObjs.has(item.fontName)) {
-              nombreReal = (pagPdf.commonObjs.get(item.fontName) || {}).name || '';
-            }
-          } catch (e) { /* la fuente aún no está cargada */ }
-
-          items.push({
-            texto: item.str,
-            x: tx[4],
-            base: tx[5],
-            ancho: item.width || 0,
-            tam: alto,
-            familia: estilo.fontFamily || 'sans-serif',
-            nombreFuente: nombreReal || estilo.fontFamily || ''
-          });
-        });
-
-        items.sort(function (a, b) { return (a.base - b.base) || (a.x - b.x); });
-
-        // Se agrupan en renglones por cercanía de línea base.
-        var renglones = [];
-        items.forEach(function (it) {
-          var ultimo = renglones[renglones.length - 1];
-          var margen = Math.max(1.5, it.tam * 0.35);
-          if (ultimo && Math.abs(ultimo.base - it.base) <= margen) {
-            ultimo.items.push(it);
-            ultimo.base = (ultimo.base * (ultimo.items.length - 1) + it.base) / ultimo.items.length;
-            ultimo.tam = Math.max(ultimo.tam, it.tam);
-          } else {
-            renglones.push({ base: it.base, tam: it.tam, items: [it] });
-          }
-        });
-
-        renglones.forEach(function (r) {
-          r.items.sort(function (a, b) { return a.x - b.x; });
-          var x0 = Infinity, x1 = -Infinity, texto = '';
-          r.items.forEach(function (it, i) {
-            x0 = Math.min(x0, it.x);
-            x1 = Math.max(x1, it.x + it.ancho);
-            if (i > 0) {
-              var prev = r.items[i - 1];
-              var hueco = it.x - (prev.x + prev.ancho);
-              if (hueco > r.tam * 0.16 && !/\s$/.test(texto) && !/^\s/.test(it.texto)) texto += ' ';
-            }
-            texto += it.texto;
-          });
-          r.texto = texto;
-          r.x = x0;
-          r.ancho = Math.max(1, x1 - x0);
-          r.y = r.base - r.tam * 0.86;
-          r.alto = r.tam * 1.16;
-          r.familia = r.items[0].familia;
-          r.nombreFuente = r.items[0].nombreFuente;
-        });
-
-        var resultado = { items: items, renglones: renglones };
+    var promesa = fuente.doc.getPage(pag.indice + 1)
+      .then(extraerRenglones)
+      .then(function (resultado) {
         textoListo.set(pag.id, resultado);
         return resultado;
+      })
+      .catch(function () {
+        var vacio = { items: [], renglones: [] };
+        textoListo.set(pag.id, vacio);
+        return vacio;
       });
-    }).catch(function () {
-      var vacio = { items: [], renglones: [] };
-      textoListo.set(pag.id, vacio);
-      return vacio;
-    });
 
     cacheTexto.set(pag.id, promesa);
     return promesa;
@@ -610,6 +631,8 @@
     dpr: function () { return dpr; },
     asegurarCapaTexto: asegurarCapaTexto,
     textoDePagina: textoDePagina,
+    extraerRenglones: extraerRenglones,
+    hayHueco: hayHueco,
     textoResuelto: function (id) { return textoListo.get(id) || null; },
     colorFondo: colorFondo,
     colorTinta: colorTinta,
