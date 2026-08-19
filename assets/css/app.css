@@ -467,6 +467,16 @@ kbd {
   background: var(--panel-alt); font-family: inherit; font-size: 11.5px; color: var(--texto);
 }
 
+/* ── Diagnóstico de tipografías ── */
+
+#tablaFuentes { margin-top: 12px; }
+#tablaFuentes .ok  { color: #1f9d63; font-weight: 600; }
+#tablaFuentes .mal { color: #c0392b; font-weight: 600; }
+#tablaFuentes .dud { color: var(--texto-2); }
+.modal-caja .casilla { margin-top: 10px; align-items: flex-start; }
+.modal-caja .casilla input { margin-top: 2px; }
+.modal-caja .casilla span { color: var(--texto-2); line-height: 1.5; }
+
 /* ───────────────────────── Opciones de radio ───────────────────────── */
 
 .opciones-radio {
