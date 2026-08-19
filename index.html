@@ -221,6 +221,23 @@
         </ul>
       </div>
     </div>
+    <h3>Si el texto se ve ilegible o distinto en cada equipo</h3>
+    <p class="modal-ayuda">
+      Muchos PDF <b>no llevan sus tipografías dentro del archivo</b>: sólo dicen
+      «usa Courier New». Entonces cada equipo las resuelve con lo que tiene
+      instalado, y por eso el mismo PDF puede verse bien en una computadora y
+      con las letras cambiadas en otra.
+    </p>
+    <label class="casilla">
+      <input type="checkbox" id="fuentesPropias">
+      <span>Usar sólo las tipografías que trae el programa
+            <b>(así se ve igual en todos los equipos)</b></span>
+    </label>
+    <p style="margin:12px 0 0">
+      <button class="btn" id="btnVerFuentes">Ver las tipografías de este PDF</button>
+    </p>
+    <div id="tablaFuentes" hidden></div>
+
     <div class="modal-btns"><button class="btn btn-primario" id="btnCerrarAyuda">Entendido</button></div>
   </div>
 </div>
@@ -392,6 +409,7 @@
 <script src="assets/js/numeracion.js"></script>
 <script src="assets/js/comparar.js"></script>
 <script src="assets/js/comprimir.js"></script>
+<script src="assets/js/fuentes.js"></script>
 <script src="assets/js/herramientas.js"></script>
 <script src="assets/js/paneles.js"></script>
 <script src="assets/js/exportar.js"></script>

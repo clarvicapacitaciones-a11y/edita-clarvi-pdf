@@ -558,6 +558,7 @@
     Clarvi.numeracion.iniciar();
     Clarvi.comparar.iniciar();
     Clarvi.comprimir.iniciar();
+    Clarvi.fuentes.iniciar();
     conectar();
 
     // Si el usuario ya firmó en otra sesión, se recupera para tenerla a mano.

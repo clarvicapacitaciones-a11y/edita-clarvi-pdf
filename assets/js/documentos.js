@@ -32,6 +32,12 @@
     if (ent.fabricaFuentes) o.StandardFontDataFactory = ent.fabricaFuentes;
     if (ent.fabricaCMaps) { o.CMapReaderFactory = ent.fabricaCMaps; o.cMapPacked = true; }
     if (contrasena) o.password = contrasena;
+
+    // Cuando el usuario prefiere ver el documento igual en todos los equipos,
+    // se le dice a pdf.js que no eche mano de las tipografías instaladas.
+    if (Clarvi.fuentes && !Clarvi.fuentes.usarFuentesDelSistema()) {
+      o.useSystemFonts = false;
+    }
     return o;
   }
 
@@ -206,6 +212,29 @@
     estado.emitir('documento');
   }
 
+  /**
+   * Vuelve a leer los PDF ya abiertos con las opciones actuales, conservando
+   * las páginas y todo lo que el usuario haya dibujado encima. Se usa al
+   * cambiar de dónde salen las tipografías.
+   */
+  function releerFuentes() {
+    var tareas = [];
+
+    estado.fuentes.forEach(function (fuente) {
+      tareas.push(
+        abrirConPdfjs(fuente.bytes, fuente.nombre).then(function (doc) {
+          try { fuente.doc.destroy(); } catch (e) { /* ya estaba cerrado */ }
+          fuente.doc = doc;
+        })
+      );
+    });
+
+    return Promise.all(tareas).then(function () {
+      Clarvi.render.olvidarLoPintado();
+      estado.emitir('documento');
+    });
+  }
+
   /* ── Operaciones por documento de origen ────────────────────────────── */
 
   /** Páginas que vienen de un archivo, en el orden en que están ahora. */
@@ -300,6 +329,7 @@
     duplicar: duplicar,
     eliminar: eliminar,
     reordenar: reordenar,
+    releerFuentes: releerFuentes,
     paginasDeFuente: paginasDeFuente,
     documentosEnOrden: documentosEnOrden,
     reordenarDocumento: reordenarDocumento,

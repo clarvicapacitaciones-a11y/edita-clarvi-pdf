@@ -480,6 +480,21 @@
 
   /* ── Reconstrucción de la lista de páginas ──────────────────────────── */
 
+  /** Marca todo como no pintado, para forzar que se vuelva a dibujar. */
+  function olvidarLoPintado() {
+    vistas.forEach(function (v) {
+      if (v.tarea) { try { v.tarea.cancel(); } catch (e) { /* ya terminada */ } v.tarea = null; }
+      v.escalaHecha = 0;
+      v.giroHecho = -1;
+      v.textoHecho = 0;
+      v.pintado = false;
+      util.vaciar(v.texto);
+      v.cargando.style.display = '';
+    });
+    cacheTexto.clear();
+    textoListo.clear();
+  }
+
   function reconstruir() {
     recalcularZoom();
 
@@ -624,6 +639,7 @@
   Clarvi.render = {
     iniciar: iniciar,
     reconstruir: reconstruir,
+    olvidarLoPintado: olvidarLoPintado,
     renderizarVisibles: renderizarVisibles,
     recalcularZoom: recalcularZoom,
     dibujarAnots: dibujarAnots,

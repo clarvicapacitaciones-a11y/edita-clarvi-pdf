@@ -167,6 +167,12 @@ Estas son las limitaciones reales, dichas sin adornos:
   tapa. Visualmente queda oculto, pero alguien podría recuperarlo copiando el
   texto. **No uses «Tapar» para ocultar información confidencial** si el archivo
   va a salir de tu control.
+- **Hay PDF que no llevan sus tipografías dentro.** Es muy común en documentos
+  administrativos: el archivo dice «usa Courier New» y da por hecho que tu
+  computadora la tiene. Si no la tiene, el texto puede verse con otra letra o
+  incluso ilegible, y por eso el mismo PDF se ve bien en un equipo y mal en
+  otro. La app trae el interruptor y el diagnóstico para resolverlo (botón
+  **?**), pero el origen está en cómo se generó ese PDF.
 - **Fuentes**: el texto que escribas usa las fuentes estándar del PDF
   (Helvetica, Times y Courier). Cubren todo el español —acentos, eñes, signos de
   apertura, símbolos de moneda—, pero no alfabetos como el chino, el árabe o el
@@ -219,7 +225,7 @@ repositorio (`assets/vendor`). Puedes usarlo con el equipo desconectado.
 | Página en blanco al abrir | Falta la carpeta `assets`. Descarga el proyecto completo, no sólo `index.html`. |
 | «No se cargaron las librerías» | Lo mismo: `assets/vendor` tiene que estar junto a `index.html`. |
 | Un PDF muy grande va lento | Abre con `abrir.bat` / `abrir.command` / `abrir.sh`: así el proceso pesado se va a un hilo aparte y va bastante más fluido. |
-| Las letras no se ven como en el original | Ese PDF no lleva sus fuentes incrustadas. Ábrelo con los lanzadores y se corrige. |
+| **El texto sale ilegible, o se ve distinto en cada computadora** | Ese PDF no lleva sus tipografías dentro, así que cada equipo las resuelve con lo que tiene instalado. Pulsa **?** y marca **«Usar sólo las tipografías que trae el programa»**: a partir de ahí se verá igual en todos. En ese mismo sitio, **«Ver las tipografías de este PDF»** te dice cuáles faltan. |
 | `abrir.bat` se cierra al instante | No pasa nada: no tienes Python ni Node. Abre `index.html` con doble clic. |
 | El texto reescrito no queda alineado | Ajusta tamaño e interlineado en el panel derecho, o mueve el cuadro con las flechas del teclado. |
 
@@ -250,6 +256,7 @@ assets/
     numeracion.js     Numeración de páginas
     comparar.js       Comparación de dos PDF (diferencias por palabras)
     comprimir.js      Reducción del tamaño del archivo
+    fuentes.js        Diagnóstico de tipografías y su origen
     herramientas.js   Interacción con el ratón y edición de texto
     paneles.js        Panel de propiedades y de páginas
     exportar.js       Construcción del PDF final
