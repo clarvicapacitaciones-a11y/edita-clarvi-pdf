@@ -9,6 +9,10 @@ sale de tu equipo**: todo se procesa dentro de tu propio navegador.
 
 ---
 
+> 📖 **[Manual completo de uso](MANUAL.md)** — todas las funciones explicadas
+> paso a paso, con los atajos, la solución de problemas y los límites de la
+> aplicación.
+
 ## Cómo empezar
 
 ### 1. Descarga el proyecto
