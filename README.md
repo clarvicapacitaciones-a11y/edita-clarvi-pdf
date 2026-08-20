@@ -13,6 +13,10 @@ sale de tu equipo**: todo se procesa dentro de tu propio navegador.
 > paso a paso, con los atajos, la solución de problemas y los límites de la
 > aplicación.
 
+> 🔧 **[Arquitectura del código](ARQUITECTURA.md)** — para quien tenga que
+> modificar el programa: cómo está construido por dentro, por qué está hecho
+> así y dónde tocar cada cosa, sin leerse toda la base de código.
+
 ## Cómo empezar
 
 ### 1. Descarga el proyecto
